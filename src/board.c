@@ -133,7 +133,10 @@ draw_board(GtkWidget *widget)
   }
 
   /* return if there are no pieces to draw */
-  if (str_pieces == NULL) return TRUE;
+  if (str_pieces == NULL) {
+    cairo_destroy(cr);
+    return TRUE;
+  }
 
   /* removed pieces */
   draw_pieces(cr, 'X');

@@ -99,7 +99,6 @@ append_text(const gchar *text, gsize len,
     /* at least one entry exists - check if this should be updated */
     gboolean is_client1_temp;
     gtk_tree_model_get(GTK_TREE_MODEL(store), &iter,
-                       DESC_COLUMN, &desc_column,
                        IS_CLIENT1_COLUMN, &is_client1_temp,
                        STDOUT_COLUMN, &stdout_column,
                        -1);
@@ -226,6 +225,7 @@ append_text(const gchar *text, gsize len,
       } else if (moves[0] == 0 && moves_length == 3) {
         board_column = g_strdup(board);
         player_column = player_temp;
+        g_free(desc_column);
         desc_column = desc_temp;
         while (--moves_length > 0) {
           moves_column = g_slist_append(moves_column,
@@ -238,6 +238,7 @@ append_text(const gchar *text, gsize len,
         }
         board_column = g_strdup(board);
         player_column = player_temp;
+        g_free(desc_column);
         desc_column = desc_temp;
         while (--moves_length > 0) {
           moves_column = g_slist_append(moves_column,
@@ -306,6 +307,7 @@ wipe_buffers()
     gtk_text_buffer_create_tag(buffers[i], "emph",
                                "background", "#FFFF00",
                                NULL);
+    g_object_unref(buffers[i]);
   }
 }
 
@@ -414,7 +416,7 @@ animation_timeout_callback(gpointer user_data)
       gtk_tree_path_free(path);
     } else {
       if (!is_running && default_quit) {
-        gtk_main_quit();
+        gtk_widget_destroy(window);
       }
       is_animation_stalled = TRUE;
     }
@@ -622,7 +624,6 @@ create_player_buffer(const gchar *name,
   GtkWidget *box;
   GtkWidget *label;
   GtkWidget *scrolledwindow;
-  PangoFontDescription *fontdesc;
 
   box = gtk_vbox_new(FALSE, 0);
   label = gtk_label_new(name);
@@ -634,8 +635,12 @@ create_player_buffer(const gchar *name,
   gtk_container_add(GTK_CONTAINER(scrolledwindow), *textview);
   gtk_text_view_set_editable(GTK_TEXT_VIEW(*textview), FALSE);
   gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(*textview), GTK_WRAP_WORD);
-  fontdesc = pango_font_description_from_string(default_font);
-  gtk_widget_modify_font(*textview, fontdesc);
+  {
+    PangoFontDescription *fontdesc;
+    fontdesc = pango_font_description_from_string(default_font);
+    gtk_widget_modify_font(*textview, fontdesc);
+    pango_font_description_free(fontdesc);
+  }
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolledwindow),
                                  GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
   *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(*textview));
