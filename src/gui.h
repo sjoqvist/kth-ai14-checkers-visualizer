@@ -1,0 +1,30 @@
+#ifndef GUI_H
+#define GUI_H
+
+#include <gtk/gtk.h>
+
+#define STDERR2 0
+#define STDOUT2 1
+#define STDERR1 2
+#define STDOUT1 3
+
+#define IS_STDOUT(x)   (x & 1)
+#define IS_STDERR(x)  ((x & 1) != 1)
+#define IS_CLIENT1(x) ((x & 2) == 2)
+#define IS_CLIENT2(x) ((x & 2) != 2)
+
+void
+append_text(const gchar *text, gsize len,
+            gboolean is_client1, gboolean is_stdout);
+
+void
+update_status(GPid pid1, gboolean is_running1, gint status1,
+              GPid pid2, gboolean is_running2, gint status2);
+
+void
+print_error(gchar *message);
+
+void
+create_window_with_widgets();
+
+#endif /* GUI_H */
