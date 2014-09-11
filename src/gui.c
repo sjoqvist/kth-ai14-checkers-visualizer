@@ -122,9 +122,9 @@ append_text(const gchar *text, gsize len,
     mark_name_end = get_mark_name_end(nrows);
     for (i = 0; i < 4; ++i) {
       GtkTextIter it;
-      gtk_text_buffer_get_iter_at_offset(buffers[i], &it, -1);
+      gtk_text_buffer_get_end_iter(buffers[i], &it);
       gtk_text_buffer_create_mark(buffers[i], mark_name_begin, &it, TRUE);
-      gtk_text_buffer_get_iter_at_offset(buffers[i], &it, -1);
+      gtk_text_buffer_get_end_iter(buffers[i], &it);
       gtk_text_buffer_create_mark(buffers[i], mark_name_end, &it, TRUE);
     }
     g_free(mark_name_begin);
@@ -142,11 +142,11 @@ append_text(const gchar *text, gsize len,
     GtkTextMark *mark;
     gchar *mark_name_end;
     GtkTextBuffer *buffer = buffers[is_client1*2+is_stdout];
-    gtk_text_buffer_get_iter_at_offset(buffer, &iter, -1);
+    gtk_text_buffer_get_end_iter(buffer, &iter);
     gtk_text_buffer_insert(buffer, &iter, text, len);
     mark_name_end = get_mark_name_end(nrows);
     mark = gtk_text_buffer_get_mark(buffer, mark_name_end);
-    gtk_text_buffer_get_iter_at_offset(buffer, &iter, -1);
+    gtk_text_buffer_get_end_iter(buffer, &iter);
     gtk_text_buffer_move_mark(buffer, mark, &iter);
     g_free(mark_name_end);
   }
@@ -506,8 +506,8 @@ highlight_text(GtkTreePath *path)
     GtkTextMark *mark_end;
 
     /* clear old highlighting */
-    gtk_text_buffer_get_iter_at_offset(buffers[i], &iter_begin, 0);
-    gtk_text_buffer_get_iter_at_offset(buffers[i], &iter_end, -1);
+    gtk_text_buffer_get_start_iter(buffers[i], &iter_begin);
+    gtk_text_buffer_get_end_iter(buffers[i], &iter_end);
     gtk_text_buffer_remove_tag_by_name(buffers[i], "emph",
                                        &iter_begin, &iter_end);
 
