@@ -118,8 +118,17 @@ draw_board(GtkWidget *widget)
     gchar cell_num[8];
     int id = 0;
     int y;
+    /* the following function call to cairo_select_font_face() broke the
+       graphics output on OS X after the first cairo_show_text() with the
+       message
+
+       "Fontconfig warning: ignoring UTF-8: not a valid region tag"
+
+       since I can't figure out why, I'm removing the call */
+    /*
     cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL,
                            CAIRO_FONT_WEIGHT_NORMAL);
+    */
     cairo_set_font_size(cr, .35);
     cairo_set_source_rgb(cr, LIGHT_SQ_R, LIGHT_SQ_G, LIGHT_SQ_B);
     for (y=0; y<8; ++y) {
