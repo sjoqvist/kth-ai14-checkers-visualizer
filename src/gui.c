@@ -92,9 +92,9 @@ append_text(const gchar *text, gsize len,
   nrows = gtk_tree_model_iter_n_children(GTK_TREE_MODEL(store), NULL);
 
   /* using 'switch' instead of 'if' to provide fallthrough into 'else' */
-  switch (nrows > 0 &&
-          gtk_tree_model_iter_nth_child(GTK_TREE_MODEL(store), &iter,
-                                        NULL, nrows - 1)) {
+  switch ((int)(nrows > 0 &&
+                gtk_tree_model_iter_nth_child(GTK_TREE_MODEL(store), &iter,
+                                              NULL, nrows - 1))) {
   case TRUE: {
     /* at least one entry exists - check if this should be updated */
     gboolean is_client1_temp;
