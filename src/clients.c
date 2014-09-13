@@ -65,7 +65,10 @@ io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
     }
     return FALSE;
   }
-  return TRUE;
+  /* for some reason I can't figure out, this function is called repeatedly
+     with condition==G_IO_IN when the client process ends - this check should
+     prevent the program from becoming unresponsive and consuming 100% CPU */
+  return clients[!IS_CLIENT1(input_type)].is_running;
 }
 
 /* callback for when one of the child processes finished */
@@ -167,7 +170,7 @@ launch_clients(const gchar *cmd1, const gchar *cmd2, GError **gerror)
       channel = g_io_channel_unix_new(fd_stdouterr[i]);
       g_io_channel_set_flags(channel, G_IO_FLAG_NONBLOCK, NULL);
       g_io_channel_set_encoding(channel, charset, NULL);
-      g_io_add_watch(channel, G_IO_IN | G_IO_ERR | G_IO_HUP,
+      g_io_add_watch(channel, G_IO_IN | G_IO_ERR | G_IO_HUP | G_IO_NVAL,
                      io_watch_callback, GINT_TO_POINTER(i));
       g_io_channel_unref(channel);
     }
