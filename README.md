@@ -14,6 +14,10 @@ excuse for me to play around with GTK+.
 ![Screenshot of the Checkers Visualizer's main
 window](https://raw.github.com/aliquis/kth-ai14-checkers-visualizer/master/doc/screenshot.png)
 
+The code works on at least Windows, OS X and Linux. Below, you'll find
+[instructions on how to build the project](#building) on the different
+operating systems.
+
 The program will only display what is sent to it. It doesn't know any of
 the rules of the game and assumes that the current game state is valid.
 I've tried to prevent it from crashing on invalid input, but it can be
@@ -22,10 +26,6 @@ information from past or future moves when rendering the current move,
 and it would happily display the game backwards if that's what's sent to
 it. **This has the implication that the source code can't provide any
 unfair help by revealing algorithms useful for the homework.**
-
-The code should work on systems running Linux, BSD or OS X. I'm also
-hoping that it works in Cygwin for those running Windows, but I haven't
-tested it.
 
 Unfortunately, I can't reproduce the Checkers problem statement, as its
 license is restricted and used with permission. Furthermore, the
@@ -47,10 +47,90 @@ See also:
 
 Building
 --------
-The project has been successfully built on Arch Linux and Debian. On
-Arch, make sure you have the packages `base-devel` and `gtk2` installed.
-On Debian, you want `build-essential` and `libgtk2.0-dev` instead. Then
-just run
+Start by downloading or cloning the repository, and read the
+instructions on how to prepare your particular operating system. Then
+proceed to [General](#general).
+
+### Windows ###
+Although the program doesn't make use of the Windows-specific parts of
+GTK+, it compiles and runs well under Cygwin (tested on Windows 8).
+
+Install [Cygwin](https://www.cygwin.com/) from its web page, and mark
+these packages for installation while you're at it:
+
+* `gcc-core`
+* `libgtk2.0-devel`
+* `make`
+* `pkg-config`
+* `xinit`
+* `xorg-server`
+
+Those are enough to compile the Visualizer, but you might want other
+packages as well (such as `gcc-g++` if you're writing your checkers
+player in C++).
+
+Run
+
+```
+startxwin
+```
+
+While you can compile the project without having started Cygwin/X,
+you'll get the message `Gtk-WARNING **: cannot open display:` if you
+forget to start it before trying to run the application. Also remember
+that your executable will be written to `build/visualizer.exe` (not
+`build/visualizer` as in OS X or Linux).
+
+### OS X ###
+The code compiles and runs well on OS X Mavericks (version 10.9).
+But there are differences between the versions and your mileage may
+vary. Also, you're likely to receive some warnings which you can ignore.
+
+First, install the Xcode command line tools. While waiting for Xcode to
+download, decide whether you want to use Homebrew or JHBuild. Homebrew
+makes the executable dependent on XQuartz.
+
+#### Homebrew ####
+Install [XQuartz](http://xquartz.macosforge.org/) (otherwise you'll get
+stuck at the GTK+ step below), log out and log back in. Then go to
+[Homebrew's website](http://brew.sh/) and run their Ruby install script.
+Then:
+
+```
+brew install pkg-config
+brew install gtk+
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/opt/X11/lib/pkgconfig
+```
+
+#### JHBuild and GTK-OSX ####
+Go to [the GTK-OSX
+website](https://wiki.gnome.org/Projects/GTK%2B/OSX/Building#Procedure)
+and go through the steps listed under "Procedure".
+
+Don't forget that you need to start a jhbuild shell before you can
+compile the code:
+
+```
+jhbuild shell
+```
+
+### Linux ###
+The project was developed on Arch Linux and has been tested on Debian
+"Wheezy".
+
+#### Arch Linux ####
+Install the packages `base-devel` and `gtk2`.
+
+#### Debian ####
+Install the packages `build-essential` and `libgtk2.0-dev`.
+
+#### Other distributions ####
+It should be trivial to deduct what to do from the examples above.
+Basically, you want a C compiler, GNU Make, pkg-config and the header
+files for GTK+ version 2.
+
+### General ###
+Once you've met all the requirements listed above, just run
 
 ```
 make
@@ -107,12 +187,9 @@ Portability
 -----------
 The code is written in ANSI C (C89), with the exception of the POSIX
 extensions `kill(2)` and `getopt(3)`. It requires GTK+ version 2 with
-header files. The project *should* thus compile and run with minimal
-effort on many Unix-like operating systems. To make the project compile
-on Windows, something should probably also be done about the GLib
-function `g_io_channel_unix_new()`. However, it's possible that the
-project will work under Cygwin. Figuring out what to do is left as an
-exercise to the reader. :)
+header files. In theory, it should run on a bunch of other operating
+systems as well, apart from the ones listed above. Let me know if you
+attempt it.
 
 Protocol
 --------
