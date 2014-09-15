@@ -25,6 +25,8 @@
 #define BORDER_G 0.
 #define BORDER_B 0.
 
+#define SQUARE_NUMBER_FONTSIZE .35
+
 #define MOVE_LINEWIDTH .04
 #define PIECE_CIRCLE_LINEWIDTH .03
 #define KING_MARK_LINEWIDTH .05
@@ -44,7 +46,7 @@ draw_pieces(cairo_t *cr, gchar player)
     if (str_pieces[i] == player || str_pieces[i] == player + ('a'-'A')) {
       const int y = i/4;
       const int x = (i%4)*2+1-(y&1);
-      cairo_move_to(cr, x+.8, y+.5);
+      cairo_move_to(cr, x+(.5+PIECE_CIRCLE_RADIUS), y+.5);
       cairo_arc(cr, x+.5, y+.5, PIECE_CIRCLE_RADIUS, 0, 2*G_PI);
     }
   }
@@ -129,7 +131,7 @@ draw_board(GtkWidget *widget)
     cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL,
                            CAIRO_FONT_WEIGHT_NORMAL);
     */
-    cairo_set_font_size(cr, .35);
+    cairo_set_font_size(cr, SQUARE_NUMBER_FONTSIZE);
     cairo_set_source_rgb(cr, LIGHT_SQ_R, LIGHT_SQ_G, LIGHT_SQ_B);
     for (y=0; y<8; ++y) {
       int x;
