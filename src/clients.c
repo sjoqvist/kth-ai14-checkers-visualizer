@@ -75,17 +75,10 @@ io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
 static void
 child_exit_callback(GPid pid, gint status, gpointer user_data)
 {
-  unsigned i;
+  client_t * const client = user_data;
 
-  UNUSED(user_data);
-
-  for (i = 0; i < sizeof(clients)/sizeof(clients[0]); ++i) {
-    if (pid == clients[i].pid) {
-      clients[i].is_running = FALSE;
-      clients[i].status = status;
-      break;
-    }
-  }
+  client->is_running = FALSE;
+  client->status = status;
   g_spawn_close_pid(pid);
   update_status(clients[0].pid, clients[0].is_running, clients[0].status,
                 clients[1].pid, clients[1].is_running, clients[1].status);
@@ -123,7 +116,7 @@ launch_clients(const gchar *cmd1, const gchar *cmd2, GError **gerror)
     }
     return;
   }
-  g_child_watch_add(clients[0].pid, child_exit_callback, NULL);
+  g_child_watch_add(clients[0].pid, child_exit_callback, clients+0);
   clients[0].is_running = TRUE;
 
   cmdline = g_strsplit(cmd2, " ", 0);
@@ -149,7 +142,7 @@ launch_clients(const gchar *cmd1, const gchar *cmd2, GError **gerror)
     kill(clients[0].pid, SIGTERM); /* POSIX extension */
     return;
   }
-  g_child_watch_add(clients[1].pid, child_exit_callback, NULL);
+  g_child_watch_add(clients[1].pid, child_exit_callback, clients+1);
   clients[1].is_running = TRUE;
 
   g_get_charset(&charset);
