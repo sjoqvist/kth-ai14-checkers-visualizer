@@ -440,14 +440,17 @@ run_kill_clicked_callback(GtkWidget *widget, gpointer user_data)
   if (is_running) {
     kill_clients();
   } else {
+    const gchar *cmds[2];
+
     /* clear data that might exist from a previous run */
     str_pieces = NULL;
     list_moves = NULL;
     free_store();
     wipe_buffers();
 
-    launch_clients(gtk_entry_get_text(GTK_ENTRY(entry_player1)),
-                   gtk_entry_get_text(GTK_ENTRY(entry_player2)), &error);
+    cmds[0] = gtk_entry_get_text(GTK_ENTRY(entry_player1));
+    cmds[1] = gtk_entry_get_text(GTK_ENTRY(entry_player2));
+    launch_clients(cmds, &error);
     if (error != NULL) {
       print_error(error->message);
       g_error_free(error);

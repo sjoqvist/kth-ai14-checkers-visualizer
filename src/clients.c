@@ -85,65 +85,52 @@ child_exit_callback(GPid pid, gint status, gpointer user_data)
 }
 
 void
-launch_clients(const gchar *cmd1, const gchar *cmd2, GError **gerror)
+launch_clients(const gchar *cmds[2], GError **error)
 {
-  GError *error = NULL;
-  gchar **cmdline;
   gint fd_stdin[2];
   gint fd_stdouterr[4];
-  gboolean success;
   G_CONST_RETURN char *charset;
 
-  cmdline = g_strsplit(cmd1, " ", 0);
-  success = g_spawn_async_with_pipes(NULL,
-                                     cmdline,
-                                     NULL,
-                                     G_SPAWN_SEARCH_PATH |
-                                     G_SPAWN_DO_NOT_REAP_CHILD,
-                                     NULL,
-                                     NULL,
-                                     &clients[0].pid,
-                                     &fd_stdin[0],
-                                     &fd_stdouterr[STDOUT1],
-                                     &fd_stdouterr[STDERR1],
-                                     &error);
-  g_strfreev(cmdline);
-  if (!success) {
-    if (gerror != NULL) {
-      *gerror = error;
-    } else {
-      g_error_free(error);
+  {
+    int i;
+    for (i = 0; i < 2; ++i) {
+      gchar **cmdline;
+      gboolean success;
+      cmdline = g_strsplit(cmds[i], " ", 0);
+      success =
+        g_spawn_async_with_pipes(/* const gchar *working_directory */
+                                 NULL,
+                                 /* gchar **argv */
+                                 cmdline,
+                                 /* gchar **envp */
+                                 NULL,
+                                 /* GSpawnFlags flags */
+                                 G_SPAWN_SEARCH_PATH |
+                                 G_SPAWN_DO_NOT_REAP_CHILD,
+                                 /* GSpawnChildSetupFunc child_setup */
+                                 NULL,
+                                 /* gpointer user_data */
+                                 NULL,
+                                 /* GPid *child_pid */
+                                 &clients[i].pid,
+                                 /* gint *standard_input */
+                                 &fd_stdin[i],
+                                 /* gint *standard_output */
+                                 &fd_stdouterr[i == 0 ? STDOUT1 : STDOUT2],
+                                 /* gint *standard_error */
+                                 &fd_stdouterr[i == 0 ? STDERR1 : STDERR2],
+                                 /* GError **error */
+                                 error);
+      g_strfreev(cmdline);
+      if (!success) {
+        /* don't keep one client running if the other one couldn't start */
+        kill_clients();
+        return;
+      }
+      g_child_watch_add(clients[i].pid, child_exit_callback, &clients[i]);
+      clients[i].is_running = TRUE;
     }
-    return;
   }
-  g_child_watch_add(clients[0].pid, child_exit_callback, clients+0);
-  clients[0].is_running = TRUE;
-
-  cmdline = g_strsplit(cmd2, " ", 0);
-  success = g_spawn_async_with_pipes(NULL,
-                                     cmdline,
-                                     NULL,
-                                     G_SPAWN_SEARCH_PATH |
-                                     G_SPAWN_DO_NOT_REAP_CHILD,
-                                     NULL,
-                                     NULL,
-                                     &clients[1].pid,
-                                     &fd_stdin[1],
-                                     &fd_stdouterr[STDOUT2],
-                                     &fd_stdouterr[STDERR2],
-                                     &error);
-  g_strfreev(cmdline);
-  if (!success) {
-    if (gerror != NULL) {
-      *gerror = error;
-    } else {
-      g_error_free(error);
-    }
-    kill(clients[0].pid, SIGTERM); /* POSIX extension */
-    return;
-  }
-  g_child_watch_add(clients[1].pid, child_exit_callback, clients+1);
-  clients[1].is_running = TRUE;
 
   g_get_charset(&charset);
 
