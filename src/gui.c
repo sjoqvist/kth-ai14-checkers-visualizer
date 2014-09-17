@@ -618,6 +618,21 @@ row_inserted_callback(GtkTreeModel *model,
   gtk_tree_view_set_cursor(GTK_TREE_VIEW(list), path, NULL, FALSE);
 }
 
+/* clean up before the program terminates, to avoid orphan processes */
+static void
+window_destroy_callback(GtkObject *object,
+                        gpointer   user_data)
+{
+  UNUSED(object);
+  UNUSED(user_data);
+
+  /* we might not receive a signal when the clients exit, but this should
+     at least get the ball rolling */
+  kill_clients();
+
+  gtk_main_quit();
+}
+
 /* build a single stream output text view and its label */
 static GtkWidget *
 create_player_buffer(const gchar *name,
@@ -705,8 +720,8 @@ create_window_with_widgets()
   if (default_maximize) {
     gtk_window_maximize(GTK_WINDOW(window));
   }
-  g_signal_connect_swapped(G_OBJECT(window), "destroy",
-                           G_CALLBACK(gtk_main_quit), NULL);
+  g_signal_connect(G_OBJECT(window), "destroy",
+                   G_CALLBACK(window_destroy_callback), NULL);
 
   /* initialize the data model for the GtkTreeView */
   {

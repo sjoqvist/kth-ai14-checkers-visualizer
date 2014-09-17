@@ -309,6 +309,11 @@ Known issues
   non-trivial since the buffers aren't terminals, and it's not a goal of
   mine as the visualizer is intended as a replacement for the verbose
   mode.
+* Resize and redraw operations are running with a lower priority than
+  other events. As a consequence, if a player client continuously
+  outputs data (for example because it's stuck in an infinite loop),
+  this will make the Visualizer appear to be frozen, although that's not
+  necessarily the case.
 
 Lacking/TODO (may or may not get fixed)
 ---------------------------------------
