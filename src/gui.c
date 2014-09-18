@@ -23,9 +23,6 @@ extern gboolean default_quit;
 extern gint     default_width;
 extern gint     default_height;
 
-extern gchar   *str_pieces;
-extern GSList  *list_moves;
-
 enum {
   PLAYER_COLUMN,
   DESC_COLUMN,
@@ -35,6 +32,9 @@ enum {
   STDOUT_COLUMN,
   N_COLUMNS
 };
+
+static gchar  *str_board  = NULL;
+static GSList *list_moves = NULL;
 
 static GtkWidget *drawing_area;
 static GtkWidget *btn_run_kill;
@@ -356,10 +356,16 @@ expose_event_callback(GtkWidget *widget,
                       GdkEventExpose *event,
                       gpointer user_data)
 {
+  cairo_t *cr;
+
   UNUSED(event);
   UNUSED(user_data);
 
-  return draw_board(widget);
+  cr = gdk_cairo_create(widget->window);
+  draw_board(cr, widget->allocation.width, widget->allocation.height,
+             str_board, list_moves);
+  cairo_destroy(cr);
+  return TRUE;
 }
 
 /* callback for when the drawing area is about to get resized */
@@ -443,7 +449,7 @@ run_kill_clicked_callback(GtkWidget *widget, gpointer user_data)
     const gchar *cmds[2];
 
     /* clear data that might exist from a previous run */
-    str_pieces = NULL;
+    str_board = NULL;
     list_moves = NULL;
     free_store();
     wipe_buffers();
@@ -478,12 +484,12 @@ static void
 load_board_and_moves(GtkTreeModel *model, GtkTreeIter iter)
 {
   gtk_tree_model_get(model, &iter,
-                     BOARD_COLUMN, &str_pieces,
+                     BOARD_COLUMN, &str_board,
                      MOVES_COLUMN, &list_moves,
                      -1);
   /* hack to avoid flickering - delay redrawing if we expect
      to get something to draw soon */
-  if (!is_running || str_pieces != NULL ||
+  if (!is_running || str_board != NULL ||
       gtk_tree_model_iter_next(model, &iter)) {
     gtk_widget_queue_draw(drawing_area);
   }
@@ -539,8 +545,8 @@ cursor_changed(GtkWidget *widget, gpointer user_data)
 
   UNUSED(user_data);
 
-  g_free(str_pieces);
-  str_pieces = NULL;
+  g_free(str_board);
+  str_board = NULL;
   list_moves = NULL;
 
   selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(widget));
@@ -586,8 +592,8 @@ row_changed_callback(GtkTreeModel *model,
 
   selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(list));
   if (gtk_tree_selection_path_is_selected(selection, path)) {
-    g_free(str_pieces);
-    str_pieces = NULL;
+    g_free(str_board);
+    str_board = NULL;
     list_moves = NULL;
     load_board_and_moves(model, *iter);
 

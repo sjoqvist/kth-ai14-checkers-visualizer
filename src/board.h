@@ -3,7 +3,11 @@
 
 #include <gtk/gtk.h>
 
-gboolean
-draw_board(GtkWidget *widget);
+void
+draw_board(cairo_t      *cr,
+           gint          width_px,
+           gint          height_px,
+           const gchar  *board,
+           const GSList *moves);
 
 #endif /* BOARD_H */
