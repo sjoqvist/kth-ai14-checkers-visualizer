@@ -6,6 +6,8 @@
 #include "main.h"
 #include "gui.h"
 
+#define BUFFER_SIZE (64<<10)
+
 static GIOChannel *channel_stdin[2] = { NULL, NULL };
 
 typedef struct {
@@ -24,7 +26,7 @@ static gboolean
 io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
 {
   const gint input_type = GPOINTER_TO_INT(data);
-  gchar buf[1024];
+  gchar buffer[BUFFER_SIZE];
   gsize bytes_read;
   GError *error = NULL;
   GIOStatus status;
@@ -35,7 +37,7 @@ io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
   }
 
   do {
-    status = g_io_channel_read_chars(source, buf, sizeof(buf)/sizeof(gchar),
+    status = g_io_channel_read_chars(source, buffer, BUFFER_SIZE,
                                      &bytes_read, &error);
     if (error != NULL) {
       g_io_channel_shutdown(source, FALSE, NULL);
@@ -50,10 +52,10 @@ io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
       continue;
     }
     if (write_to != NULL) {
-      g_io_channel_write_chars(write_to, buf, bytes_read, NULL, NULL);
+      g_io_channel_write_chars(write_to, buffer, bytes_read, NULL, NULL);
       g_io_channel_flush(write_to, NULL);
     }
-    append_text(buf, bytes_read,
+    append_text(buffer, bytes_read,
                 IS_CLIENT1(input_type), IS_STDOUT(input_type));
   } while (status == G_IO_STATUS_NORMAL);
 
