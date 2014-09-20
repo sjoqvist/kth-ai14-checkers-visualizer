@@ -314,6 +314,10 @@ Known issues
   outputs data (for example because it's stuck in an infinite loop),
   this will make the Visualizer appear to be frozen, although that's not
   necessarily the case.
+* When a client writes frequently to stderr, the Visualizer uses 100%
+  CPU and continues to do so also after the clients have exited. This
+  probably indicates that the GLib event loop is clogged with
+  low-priority events. This should be investigated.
 
 Lacking/TODO (may or may not get fixed)
 ---------------------------------------
