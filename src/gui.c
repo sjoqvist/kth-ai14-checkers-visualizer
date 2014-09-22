@@ -192,17 +192,17 @@ append_text(const gchar *text, gsize len,
             desc_temp = g_strjoinv(moves[0] == 0 ? "-" : "x", movesv + 1);
             player_temp = g_strdup(player == 'r' ? "[W]" : "[R]");
           }
-        }
-        for (i = 1; i < moves_length; ++i) {
-          moves[i] = atoi(movesv[i]) - 1;
-          if (moves[i] < 0 || moves[i] > 31) {
-            /* illegal value, avoid parsing */
-            moves_length = 0;
+          for (i = 1; i < moves_length; ++i) {
+            moves[i] = atoi(movesv[i]) - 1;
+            if (moves[i] < 0 || moves[i] > 31) {
+              /* illegal value, avoid parsing */
+              moves_length = 0;
+            }
           }
         }
         g_strfreev(movesv);
       }
-      if (moves[0] >= -5 && moves[0] <= -1 && moves_length == 1) {
+      if (moves_length == 1 && moves[0] >= -5 && moves[0] <= -1) {
         g_free(desc_column);
         switch (moves[0]) {
         case -5:
@@ -222,7 +222,7 @@ append_text(const gchar *text, gsize len,
           break;
         }
         board_column = g_strdup(board);
-      } else if (moves[0] == 0 && moves_length == 3) {
+      } else if (moves_length == 3 && moves[0] == 0) {
         board_column = g_strdup(board);
         player_column = player_temp;
         g_free(desc_column);
@@ -231,7 +231,8 @@ append_text(const gchar *text, gsize len,
           moves_column = g_slist_append(moves_column,
                                         GINT_TO_POINTER(moves[moves_length]));
         }
-      } else if (moves[0] > 0 && moves_length == 2 + (guint)moves[0]) {
+      } else if (moves_length > 2 && moves[0] > 0 &&
+                 moves_length == 2 + (guint)moves[0]) {
         guint i;
         for (i = 2; i < moves_length; ++i) {
           board[(moves[i-1] + moves[i])/2 + ((moves[i]&4) == 0)] = 'x';
