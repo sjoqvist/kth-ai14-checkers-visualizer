@@ -84,7 +84,7 @@ that your executable will be written to `build/visualizer.exe` (not
 ### OS X ###
 The code compiles and runs well on OS X Mavericks (version 10.9).
 But there are differences between the versions and your mileage may
-vary. Also, you're likely to receive some warnings which you can ignore.
+vary.
 
 First, install the Xcode command line tools. While waiting for Xcode to
 download, decide whether you want to use Homebrew or JHBuild. Homebrew

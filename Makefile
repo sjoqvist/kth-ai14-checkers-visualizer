@@ -1,6 +1,7 @@
 CC=c89
 CFLAGS=-O2 -Wall -Wextra -pedantic
-GTKFLAGS=`pkg-config --cflags --libs gtk+-2.0`
+GTKINCLUDE=`pkg-config --cflags gtk+-2.0`
+GTKLIBS=`pkg-config --libs gtk+-2.0`
 SRCDIR=src
 BUILDDIR=build
 OBJDIR=$(BUILDDIR)/obj
@@ -18,7 +19,7 @@ TARGET=$(BUILDDIR)/visualizer
 
 define make-goal
 $(OBJDIR)/$(patsubst %.c,%.o,$(firstword $1)): $(addprefix $(SRCDIR)/,$1)
-	$(CC) -o $$@ -c $(SRCDIR)/$(firstword $1) $(CFLAGS) $(GTKFLAGS)
+	$(CC) -o $$@ -c $(SRCDIR)/$(firstword $1) $(CFLAGS) $(GTKINCLUDE)
 endef
 
 all: checkdirs $(TARGET)
@@ -27,7 +28,7 @@ strip: all
 	strip $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) -o $(TARGET) $(OBJ) $(CFLAGS) $(GTKFLAGS)
+	$(CC) -o $(TARGET) $(OBJ) $(CFLAGS) $(GTKLIBS)
 
 $(foreach dep,$(DEPS),$(eval $(call make-goal,$(subst :, ,$(dep)))))
 
