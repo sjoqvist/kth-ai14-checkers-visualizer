@@ -203,24 +203,15 @@ append_text(const gchar *text, gsize len,
         g_strfreev(movesv);
       }
       if (moves_length == 1 && moves[0] >= -5 && moves[0] <= -1) {
+        static const gchar * const special_actions[] = {
+          "Null move",    /* -5 */
+          "Draw",         /* -4 */
+          "White wins",   /* -3 */
+          "Red wins",     /* -2 */
+          "Initial setup" /* -1 */
+        };
         g_free(desc_column);
-        switch (moves[0]) {
-        case -5:
-          desc_column = g_strdup("Null move");
-          break;
-        case -4:
-          desc_column = g_strdup("Draw");
-          break;
-        case -3:
-          desc_column = g_strdup("White wins");
-          break;
-        case -2:
-          desc_column = g_strdup("Red wins");
-          break;
-        case -1:
-          desc_column = g_strdup("Initial setup");
-          break;
-        }
+        desc_column = g_strdup(special_actions[moves[0]+5]);
         board_column = g_strdup(board);
       } else if (moves_length == 3 && moves[0] == 0) {
         board_column = g_strdup(board);
