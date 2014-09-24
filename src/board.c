@@ -3,6 +3,8 @@
  *
  * Draws the board on a Cairo context, including squares, pieces and moves.
  */
+#include <assert.h>
+#include <string.h>
 #include <gtk/gtk.h>
 #include "board.h"
 
@@ -74,6 +76,10 @@
 /* CENTER is to be used iff we're not adding another constant afterwards */
 #define CENTER(x) ((x)+SQ_CENTER)
 
+/* make numeric constant into string */
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 /*
  * Function: draw_pieces
  * ---------------------
@@ -82,12 +88,18 @@
  * cr:     a Cairo context
  * board:  a string where each character represents a dark square, and
  *         where a lowercase/uppercase letter represents a man/king
- * player: uppercase 'R' or 'W'
+ * player: uppercase 'R' (red), 'W' (white) or 'X' (removed)
  */
 static void
 draw_pieces(cairo_t * const cr, const gchar * const board, const gchar player)
 {
   guint8 i;
+
+  assert(cr != NULL);
+  assert(board != NULL);
+  assert(strlen(board) == NUM_DARK_SQ);
+  assert(player == 'R' || player == 'W' || player == 'X');
+
   for (i=0; i<NUM_DARK_SQ; ++i) {
     /* 'A'-'Z' are in ASCII range 0x41-0x5a and 'a'-'z' in range 0x61-0x7a
        hence, we can check for either by masking out 0x20 */
@@ -113,6 +125,11 @@ static void
 draw_king_markers(cairo_t * const cr, const gchar * const board)
 {
   guint8 i;
+
+  assert(cr != NULL);
+  assert(board != NULL);
+  assert(strlen(board) == NUM_DARK_SQ);
+
   for (i=0; i<NUM_DARK_SQ; ++i) {
     if (board[i] >= 'A' && board[i] <= 'Z') {
       const guint8 x = BOARD_COL(i);
@@ -139,10 +156,15 @@ draw_moves(cairo_t * const cr, const GSList * const moves)
 {
   const GSList *move = moves;
 
+  assert(cr != NULL);
+
   while (move != NULL) {
     const guint8 sq = GPOINTER_TO_INT(move->data);
     const guint8 y  = BOARD_ROW(sq);
     const guint8 x  = BOARD_COL(sq);
+
+    assert(sq < NUM_DARK_SQ);
+
     /* only move if it's the first square in the sequence */
     if (move == moves) {
       cairo_move_to(cr, CENTER(x), CENTER(y));
@@ -180,6 +202,10 @@ draw_board(cairo_t      * const cr,
            const gchar  * const board,
            const GSList * const moves)
 {
+  assert(cr != NULL);
+  assert(board == NULL ||
+         g_regex_match_simple("^[rRwWx.]{"STR(NUM_DARK_SQ)"}$", board, 0, 0));
+
   /* scale the drawing area to (0,0) -- (8,8) */
   cairo_scale(cr, width_px/8., height_px/8.);
 
@@ -202,7 +228,7 @@ draw_board(cairo_t      * const cr,
   cairo_set_font_size(cr, SQUARE_NUMBER_FONTSIZE);
   cairo_set_source_rgb(cr, LIGHT_SQ_R, LIGHT_SQ_G, LIGHT_SQ_B);
   {
-    static const gchar * const square_num[] =
+    static const gchar * const square_num[NUM_DARK_SQ] =
       { "1",  "2",  "3",  "4",  "5",  "6",  "7",  "8",
         "9",  "10", "11", "12", "13", "14", "15", "16",
         "17", "18", "19", "20", "21", "22", "23", "24",
