@@ -115,7 +115,7 @@ append_text(const gchar *text, gsize len,
     /* new row: create new buffer textmarks and a new entry in the store */
     gchar *mark_name_begin;
     gchar *mark_name_end;
-    int i;
+    guint8 i;
 
     /* add buffer textmarks */
     mark_name_begin = get_mark_name_begin(nrows);
@@ -292,7 +292,7 @@ free_store()
 static void
 wipe_buffers()
 {
-  int i;
+  guint8 i;
   for (i = 0; i < 4; ++i) {
     buffers[i] = gtk_text_buffer_new(NULL);
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(textviews[i]), buffers[i]);
@@ -305,12 +305,14 @@ wipe_buffers()
 
 /* get a string describing the state of the client */
 static gchar *
-get_client_description(gint n, GPid pid, gboolean is_running, gint status)
+get_client_description(guint16 n, GPid pid, gboolean is_running, gint status)
 {
   if (is_running) {
-    return g_strdup_printf("Player %d (pid %d) is running.", n, pid);
+    return g_strdup_printf("Player %" G_GUINT16_FORMAT
+                           " (pid %d) is running.", n, pid);
   } else {
-    return g_strdup_printf("Player %d (pid %d) exited with status %d.",
+    return g_strdup_printf("Player %" G_GUINT16_FORMAT
+                           " (pid %d) exited with status %d.",
                            n, pid, status);
   }
 }
@@ -494,7 +496,7 @@ highlight_text(GtkTreePath *path)
   gint row;
   gchar *mark_name_begin;
   gchar *mark_name_end;
-  int i;
+  guint8 i;
 
   row = *gtk_tree_path_get_indices(path);
   mark_name_begin = get_mark_name_begin(row);

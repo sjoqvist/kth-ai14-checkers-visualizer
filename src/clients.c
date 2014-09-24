@@ -7,6 +7,7 @@
 #include "gui.h"
 
 #define BUFFER_SIZE (64<<10)
+#define NUM_CLIENTS 2
 
 static GIOChannel *channel_stdin[2] = { NULL, NULL };
 
@@ -16,7 +17,7 @@ typedef struct {
   gint status;
 } client_t;
 
-static client_t clients[2] = {
+static client_t clients[NUM_CLIENTS] = {
   { 0, FALSE, 0 },
   { 0, FALSE, 0 }
 };
@@ -87,15 +88,15 @@ child_exit_callback(GPid pid, gint status, gpointer user_data)
 }
 
 void
-launch_clients(const gchar *cmds[2], GError **error)
+launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
 {
-  gint fd_stdin[2];
+  gint fd_stdin[NUM_CLIENTS];
   gint fd_stdouterr[4];
   G_CONST_RETURN char *charset;
 
   {
-    int i;
-    for (i = 0; i < 2; ++i) {
+    guint8 i;
+    for (i = 0; i < NUM_CLIENTS; ++i) {
       gchar **cmdline;
       gboolean success;
       cmdline = g_strsplit(cmds[i], " ", 0);
@@ -138,15 +139,15 @@ launch_clients(const gchar *cmds[2], GError **error)
 
   /* open two channels for writing */
   {
-    int i;
-    for (i = 0; i < 2; ++i) {
+    guint8 i;
+    for (i = 0; i < NUM_CLIENTS; ++i) {
       channel_stdin[i] = g_io_channel_unix_new(fd_stdin[i]);
       g_io_channel_set_encoding(channel_stdin[i], charset, NULL);
     }
   }
   /* open four channels for reading, and start watching them */
   {
-    int i;
+    guint8 i;
     for (i = 0; i < 4; ++i) {
       GIOChannel *channel;
       channel = g_io_channel_unix_new(fd_stdouterr[i]);
@@ -167,8 +168,8 @@ launch_clients(const gchar *cmds[2], GError **error)
 void
 kill_clients()
 {
-  unsigned i;
-  for (i = 0; i < sizeof(clients)/sizeof(clients[0]); ++i) {
+  guint8 i;
+  for (i = 0; i < NUM_CLIENTS; ++i) {
     if (clients[i].is_running) {
       kill(clients[i].pid, SIGTERM); /* POSIX extension */
     }

@@ -5,8 +5,8 @@
 
 void
 draw_board(cairo_t      *cr,
-           gint          width_px,
-           gint          height_px,
+           int           width_px,
+           int           height_px,
            const gchar  *board,
            const GSList *moves);
 

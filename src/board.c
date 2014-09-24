@@ -87,13 +87,13 @@
 static void
 draw_pieces(cairo_t * const cr, const gchar * const board, const gchar player)
 {
-  int i;
+  guint8 i;
   for (i=0; i<NUM_DARK_SQ; ++i) {
     /* 'A'-'Z' are in ASCII range 0x41-0x5a and 'a'-'z' in range 0x61-0x7a
        hence, we can check for either by masking out 0x20 */
     if ((board[i] & ~0x20) == player) {
-      const int x = BOARD_COL(i);
-      const int y = BOARD_ROW(i);
+      const guint8 x = BOARD_COL(i);
+      const guint8 y = BOARD_ROW(i);
       cairo_move_to(cr, x+(SQ_CENTER+PIECE_CIRCLE_RADIUS), CENTER(y));
       cairo_arc(cr, CENTER(x), CENTER(y), PIECE_CIRCLE_RADIUS, 0., 2*G_PI);
     }
@@ -112,11 +112,11 @@ draw_pieces(cairo_t * const cr, const gchar * const board, const gchar player)
 static void
 draw_king_markers(cairo_t * const cr, const gchar * const board)
 {
-  int i;
+  guint8 i;
   for (i=0; i<NUM_DARK_SQ; ++i) {
     if (board[i] >= 'A' && board[i] <= 'Z') {
-      const int x = BOARD_COL(i);
-      const int y = BOARD_ROW(i);
+      const guint8 x = BOARD_COL(i);
+      const guint8 y = BOARD_ROW(i);
       cairo_move_to(cr, x+(SQ_CENTER-KING_MARK_RADIUS), CENTER(y));
       cairo_line_to(cr, x+(SQ_CENTER+KING_MARK_RADIUS), CENTER(y));
       cairo_move_to(cr, CENTER(x), y+(SQ_CENTER-KING_MARK_RADIUS));
@@ -140,9 +140,9 @@ draw_moves(cairo_t * const cr, const GSList * const moves)
   const GSList *move = moves;
 
   while (move != NULL) {
-    const int sq = GPOINTER_TO_INT(move->data);
-    const int y  = BOARD_ROW(sq);
-    const int x  = BOARD_COL(sq);
+    const guint8 sq = GPOINTER_TO_INT(move->data);
+    const guint8 y  = BOARD_ROW(sq);
+    const guint8 x  = BOARD_COL(sq);
     /* only move if it's the first square in the sequence */
     if (move == moves) {
       cairo_move_to(cr, CENTER(x), CENTER(y));
@@ -175,8 +175,8 @@ draw_moves(cairo_t * const cr, const GSList * const moves)
  */
 void
 draw_board(cairo_t      * const cr,
-           const gint           width_px,
-           const gint           height_px,
+           const int            width_px,
+           const int            height_px,
            const gchar  * const board,
            const GSList * const moves)
 {
@@ -190,7 +190,7 @@ draw_board(cairo_t      * const cr,
 
   /* draw dark squares */
   {
-    int i;
+    guint8 i;
     for (i=0; i<NUM_DARK_SQ; ++i) {
       cairo_rectangle(cr, BOARD_COL(i), BOARD_ROW(i), 1., 1.);
     }
@@ -207,7 +207,7 @@ draw_board(cairo_t      * const cr,
         "9",  "10", "11", "12", "13", "14", "15", "16",
         "17", "18", "19", "20", "21", "22", "23", "24",
         "25", "26", "27", "28", "29", "30", "31", "32" };
-    int i = 0;
+    guint8 i;
     for (i=0; i<NUM_DARK_SQ; ++i) {
       cairo_move_to(cr, BOARD_COL(i), BOARD_ROW(i)+1);
       cairo_show_text(cr, square_num[i]);

@@ -117,8 +117,10 @@ main(int argc, char **argv)
   options_success = parse_options(argc, argv);
 
   if (display_help) {
-    int i = 0;
-    do obfuscated_email[i] ^= 42 + 3*i; while (obfuscated_email[++i] != 0);
+    guint8 i;
+    for (i = 0; obfuscated_email[i] != 0; ++i) {
+      obfuscated_email[i] ^= 42 + 3*i;
+    }
     fprintf(stderr, usage,
             argv[0], usage_execution, usage_window, usage_misc,
             obfuscated_email);
