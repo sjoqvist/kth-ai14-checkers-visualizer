@@ -2,6 +2,7 @@
 #define GUI_H
 
 #include <gtk/gtk.h>
+#include "clients.h"
 
 #define STDERR2 0
 #define STDOUT2 1
@@ -18,8 +19,7 @@ append_text(const gchar *text, gsize len,
             gboolean is_client1, gboolean is_stdout);
 
 void
-update_status(GPid pid1, gboolean is_running1, gint status1,
-              GPid pid2, gboolean is_running2, gint status2);
+update_status(const client_t clients[NUM_CLIENTS]);
 
 void
 print_error(gchar *message);

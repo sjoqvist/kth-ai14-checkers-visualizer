@@ -7,15 +7,8 @@
 #include "gui.h"
 
 #define BUFFER_SIZE (64<<10)
-#define NUM_CLIENTS 2
 
-static GIOChannel *channel_stdin[2] = { NULL, NULL };
-
-typedef struct {
-  GPid pid;
-  gboolean is_running;
-  gint status;
-} client_t;
+static GIOChannel *channel_stdin[NUM_CLIENTS] = { NULL, NULL };
 
 static client_t clients[NUM_CLIENTS] = {
   { 0, FALSE, 0 },
@@ -83,8 +76,7 @@ child_exit_callback(GPid pid, gint status, gpointer user_data)
   client->is_running = FALSE;
   client->status = status;
   g_spawn_close_pid(pid);
-  update_status(clients[0].pid, clients[0].is_running, clients[0].status,
-                clients[1].pid, clients[1].is_running, clients[1].status);
+  update_status(clients);
 }
 
 void
@@ -160,8 +152,7 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
   }
 
   /* update the statusbar */
-  update_status(clients[0].pid, clients[0].is_running, clients[0].status,
-                clients[1].pid, clients[1].is_running, clients[1].status);
+  update_status(clients);
 }
 
 /* send SIGTERM to any running child process */

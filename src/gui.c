@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <gtk/gtk.h>
@@ -305,38 +306,43 @@ wipe_buffers()
 
 /* get a string describing the state of the client */
 static gchar *
-get_client_description(guint16 n, GPid pid, gboolean is_running, gint status)
+get_client_description(guint16 n, const client_t * const client)
 {
-  if (is_running) {
+  if (client->is_running) {
     return g_strdup_printf("Player %" G_GUINT16_FORMAT
-                           " (pid %d) is running.", n, pid);
+                           " (pid %d) is running.", n, client->pid);
   } else {
     return g_strdup_printf("Player %" G_GUINT16_FORMAT
                            " (pid %d) exited with status %d.",
-                           n, pid, status);
+                           n, client->pid, client->status);
   }
 }
 
 /* update the statusbar after a child process has spawned or exited */
 void
-update_status(GPid pid1, gboolean is_running1, gint status1,
-              GPid pid2, gboolean is_running2, gint status2)
+update_status(const client_t clients[NUM_CLIENTS])
 {
-  gchar *client1;
-  gchar *client2;
   gchar *text;
+  is_running = FALSE;
+  {
+    gchar *descriptions[NUM_CLIENTS+1];
+    guint8 i;
+    for (i=0; i<NUM_CLIENTS; ++i) {
+      descriptions[i] = get_client_description(i+1, &clients[i]);
+      is_running |= clients[i].is_running;
+    }
+    descriptions[NUM_CLIENTS] = NULL;
 
-  client1 = get_client_description(1, pid1, is_running1, status1);
-  client2 = get_client_description(2, pid2, is_running2, status2);
-  text = g_strdup_printf("%s %s", client1, client2);
-  g_free(client1);
-  g_free(client2);
+    assert(g_strv_length(descriptions) == NUM_CLIENTS);
+
+    text = g_strjoinv(" ", descriptions);
+    for (i=0; i<NUM_CLIENTS; ++i) g_free(descriptions[i]);
+  }
 
   gtk_statusbar_pop(GTK_STATUSBAR(statusbar), statusbar_context_id);
   gtk_statusbar_push(GTK_STATUSBAR(statusbar), statusbar_context_id, text);
   g_free(text);
 
-  is_running = is_running1 || is_running2;
   gtk_button_set_label(GTK_BUTTON(btn_run_kill), is_running ? "Kill" : "Run");
   if (!is_running) {
     /* hack to update the board if redrawing was delayed */
