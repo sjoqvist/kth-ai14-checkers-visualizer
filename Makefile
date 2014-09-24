@@ -1,6 +1,7 @@
-CC=c89
-CFLAGS=-O2 -Wall -Wextra -pedantic
-GTKINCLUDE=`pkg-config --cflags gtk+-2.0`
+CFLAGS=-Wall -Wextra -pedantic -std=c89
+DEBUGFLAGS=-O0 -g
+NDEBUGFLAGS=-O2 -DNDEBUG
+GTKFLAGS=`pkg-config --cflags gtk+-2.0`
 GTKLIBS=`pkg-config --libs gtk+-2.0`
 SRCDIR=src
 BUILDDIR=build
@@ -15,14 +16,20 @@ CFILES=$(foreach dep,$(DEPS),$(firstword $(subst :, ,$(dep))))
 OBJ=$(patsubst %.c,$(OBJDIR)/%.o,$(CFILES))
 TARGET=$(BUILDDIR)/visualizer
 
-.PHONY: all checkdirs strip clean
+.PHONY: all debug executable checkdirs strip clean
+
+all: CFLAGS += $(NDEBUGFLAGS)
+all: checkdirs executable
+
+debug: CFLAGS += $(DEBUGFLAGS)
+debug: checkdirs executable
 
 define make-goal
 $(OBJDIR)/$(patsubst %.c,%.o,$(firstword $1)): $(addprefix $(SRCDIR)/,$1)
-	$(CC) -o $$@ -c $(SRCDIR)/$(firstword $1) $(CFLAGS) $(GTKINCLUDE)
+	$(CC) -o $$@ -c $(SRCDIR)/$(firstword $1) $$(CFLAGS) $(GTKFLAGS)
 endef
 
-all: checkdirs $(TARGET)
+executable: $(TARGET)
 
 strip: all
 	strip $(TARGET)

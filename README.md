@@ -142,7 +142,14 @@ in the project directory, alternatively
 make strip
 ```
 
-if you don't want to keep the debugging symbols.
+if you don't want to keep the symbols. On the other hand, you could run
+
+```
+make debug
+```
+
+to disable optimization, enable assertions and include debugging
+information in the executable.
 
 If your version of `make` doesn't support the fancy syntax in
 `Makefile`, you can achieve essentially the same thing using
