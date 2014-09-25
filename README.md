@@ -329,6 +329,3 @@ Known issues
 Lacking/TODO (may or may not get fixed)
 ---------------------------------------
 * Overall clean-up (readability, documentation, separation of concerns).
-* Analyze the code for resource leaks. I haven't seen evidence that
-  prolonged use would cause for example an increase in memory usage, but
-  I'd be surprised if the code is completely solid.

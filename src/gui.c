@@ -33,7 +33,9 @@ enum {
   N_COLUMNS
 };
 
+/* this string must be freed before it's overwritten */
 static gchar  *str_board  = NULL;
+/* this list should not be freed, as it's only a snapshot from the store */
 static GSList *list_moves = NULL;
 
 static GtkWidget *drawing_area;
@@ -277,9 +279,13 @@ free_move(GtkTreeModel *model,
 
 /* release and clear information in the store */
 static void
-free_store()
+release_resources()
 {
   GtkListStore *store;
+
+  g_free(str_board);
+  str_board = NULL;
+  list_moves = NULL;
 
   store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(list)));
   gtk_tree_model_foreach(GTK_TREE_MODEL(store), free_move, NULL);
@@ -447,9 +453,7 @@ run_kill_clicked_callback(GtkWidget *widget, gpointer user_data)
     const gchar *cmds[2];
 
     /* clear data that might exist from a previous run */
-    str_board = NULL;
-    list_moves = NULL;
-    free_store();
+    release_resources();
     wipe_buffers();
 
     cmds[0] = gtk_entry_get_text(GTK_ENTRY(entry_cmds[0]));
@@ -481,6 +485,9 @@ animate_toggled_callback(GtkToggleButton *button, gpointer user_data)
 static void
 load_board_and_moves(GtkTreeModel *model, GtkTreeIter iter)
 {
+  assert(str_board == NULL);
+  assert(list_moves == NULL);
+
   gtk_tree_model_get(model, &iter,
                      BOARD_COLUMN, &str_board,
                      MOVES_COLUMN, &list_moves,
@@ -633,6 +640,8 @@ window_destroy_callback(GtkObject *object,
   /* we might not receive a signal when the clients exit, but this should
      at least get the ball rolling */
   kill_clients();
+
+  release_resources();
 
   gtk_main_quit();
 }
