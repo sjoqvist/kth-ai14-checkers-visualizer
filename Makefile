@@ -11,7 +11,7 @@ DEPS=\
  board.c:board.h \
  clients.c:clients.h:gui.h:main.h \
  gui.c:board.h:clients.h:gui.h:main.h \
- main.c:gui.h:main.h
+ main.c:gui.h:clients.h:main.h
 CFILES=$(foreach dep,$(DEPS),$(firstword $(subst :, ,$(dep))))
 OBJ=$(patsubst %.c,$(OBJDIR)/%.o,$(CFILES))
 TARGET=$(BUILDDIR)/visualizer

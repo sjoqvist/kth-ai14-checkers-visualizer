@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <gtk/gtk.h>
 #include "main.h"
+#include "clients.h"
 #include "gui.h"
 
 /* splitting the usage string to avoid a 509 byte limitation in C90 */
@@ -43,17 +44,16 @@ static const gchar *usage_misc =
 /* I hope this is sufficient to fool harvesters */
 static gchar obfuscated_email[] = "KCTVDJ|L(*9='\x7f'#";
 
-gchar   *default_cmd1     = "";
-gchar   *default_cmd2     = "";
-gboolean default_animate  = TRUE;
-gboolean default_run      = FALSE;
-guint    default_timeout  = 1000;
+gchar   *default_cmds[NUM_CLIENTS] = { "", "" };
+gboolean default_animate           = TRUE;
+gboolean default_run               = FALSE;
+guint    default_timeout           = 1000;
 
-gchar   *default_font     = "monospace 8";
-gboolean default_maximize = FALSE;
-gboolean default_quit     = FALSE;
-gint     default_width    = 600;
-gint     default_height   = 650;
+gchar   *default_font              = "monospace 8";
+gboolean default_maximize          = FALSE;
+gboolean default_quit              = FALSE;
+gint     default_width             = 600;
+gint     default_height            = 650;
 
 static gboolean display_help = FALSE;
 
@@ -64,10 +64,10 @@ parse_options(int argc, char **argv)
   while((opt = getopt(argc, argv, "1:2:aAf:hmqrRt:x:y:")) != -1) {
     switch (opt) {
     case '1':
-      default_cmd1 = optarg;
+      default_cmds[0] = optarg;
       break;
     case '2':
-      default_cmd2 = optarg;
+      default_cmds[1] = optarg;
       break;
     case 'a':
       default_animate = TRUE;

@@ -1,7 +1,8 @@
 #define _POSIX_C_SOURCE 1
-#include <gtk/gtk.h>
+#include <assert.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <gtk/gtk.h>
 #include "clients.h"
 #include "main.h"
 #include "gui.h"
@@ -15,6 +16,19 @@ static client_t clients[NUM_CLIENTS] = {
   { 0, FALSE, 0 }
 };
 
+static void
+stop_channels(GIOChannel *channel_in, GIOChannel *channel_out)
+{
+  assert(channel_in != NULL);
+
+  g_io_channel_shutdown(channel_in, FALSE, NULL);
+
+  if (channel_out == NULL) return;
+
+  g_io_channel_shutdown(channel_out, FALSE, NULL);
+  g_io_channel_unref(channel_out);
+}
+
 /* callback for when new data as available in a pipe */
 static gboolean
 io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
@@ -27,44 +41,33 @@ io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
   GIOChannel *write_to = NULL;
 
   if (IS_STDOUT(input_type)) {
-    write_to = channel_stdin[STDOUT1 == input_type];
+    write_to = channel_stdin[1 ^ CLIENT_ID(input_type)];
   }
 
   do {
     status = g_io_channel_read_chars(source, buffer, BUFFER_SIZE,
                                      &bytes_read, &error);
     if (error != NULL) {
-      g_io_channel_shutdown(source, FALSE, NULL);
-      if (write_to != NULL) {
-        g_io_channel_shutdown(write_to, FALSE, NULL);
-        g_io_channel_unref(write_to);
-      }
+      stop_channels(source, write_to);
       print_error(error->message);
       return FALSE;
     }
-    if (bytes_read == 0) {
-      continue;
-    }
+    if (bytes_read == 0) continue;
     if (write_to != NULL) {
       g_io_channel_write_chars(write_to, buffer, bytes_read, NULL, NULL);
       g_io_channel_flush(write_to, NULL);
     }
-    append_text(buffer, bytes_read,
-                IS_CLIENT1(input_type), IS_STDOUT(input_type));
+    append_text(buffer, bytes_read, input_type);
   } while (status == G_IO_STATUS_NORMAL);
 
   if ((condition & ~G_IO_IN) != 0) {
-    g_io_channel_shutdown(source, FALSE, NULL);
-    if (write_to != NULL) {
-      g_io_channel_shutdown(write_to, FALSE, NULL);
-      g_io_channel_unref(write_to);
-    }
+    stop_channels(source, write_to);
     return FALSE;
   }
   /* for some reason I can't figure out, this function is called repeatedly
      with condition==G_IO_IN when the client process ends - this check should
      prevent the program from becoming unresponsive and consuming 100% CPU */
-  return clients[!IS_CLIENT1(input_type)].is_running;
+  return clients[CLIENT_ID(input_type)].is_running;
 }
 
 /* callback for when one of the child processes finished */
@@ -72,6 +75,9 @@ static void
 child_exit_callback(GPid pid, gint status, gpointer user_data)
 {
   client_t * const client = user_data;
+
+  assert(client != NULL);
+  assert(client->is_running);
 
   client->is_running = FALSE;
   client->status = status;
@@ -83,14 +89,19 @@ void
 launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
 {
   gint fd_stdin[NUM_CLIENTS];
-  gint fd_stdouterr[4];
+  gint fd_stdouterr[NUM_CHANNELS];
   G_CONST_RETURN char *charset;
+
+  assert(error == NULL || *error == NULL);
 
   {
     guint8 i;
     for (i = 0; i < NUM_CLIENTS; ++i) {
       gchar **cmdline;
       gboolean success;
+
+      assert(cmds[i] != NULL);
+
       cmdline = g_strsplit(cmds[i], " ", 0);
       success =
         g_spawn_async_with_pipes(/* const gchar *working_directory */
@@ -111,9 +122,9 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
                                  /* gint *standard_input */
                                  &fd_stdin[i],
                                  /* gint *standard_output */
-                                 &fd_stdouterr[i == 0 ? STDOUT1 : STDOUT2],
+                                 &fd_stdouterr[CHANNEL_ID(i, STDOUT)],
                                  /* gint *standard_error */
-                                 &fd_stdouterr[i == 0 ? STDERR1 : STDERR2],
+                                 &fd_stdouterr[CHANNEL_ID(i, STDERR)],
                                  /* GError **error */
                                  error);
       g_strfreev(cmdline);
@@ -140,7 +151,7 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
   /* open four channels for reading, and start watching them */
   {
     guint8 i;
-    for (i = 0; i < 4; ++i) {
+    for (i = 0; i < NUM_CHANNELS; ++i) {
       GIOChannel *channel;
       channel = g_io_channel_unix_new(fd_stdouterr[i]);
       g_io_channel_set_flags(channel, G_IO_FLAG_NONBLOCK, NULL);

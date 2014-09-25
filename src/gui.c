@@ -12,8 +12,7 @@
 static gboolean
 animation_timeout_callback(gpointer user_data);
 
-extern gchar   *default_cmd1;
-extern gchar   *default_cmd2;
+extern gchar   *default_cmds[NUM_CLIENTS];
 extern gboolean default_animate;
 extern gboolean default_run;
 extern guint    default_timeout;
@@ -29,7 +28,7 @@ enum {
   DESC_COLUMN,
   BOARD_COLUMN,
   MOVES_COLUMN,
-  IS_CLIENT1_COLUMN,
+  IS_CLIENT0_COLUMN,
   STDOUT_COLUMN,
   N_COLUMNS
 };
@@ -45,11 +44,10 @@ static guint statusbar_context_id;
 static guint source_timeout = 0;
 static gboolean is_animation_stalled = FALSE;
 static GtkWidget *window;
-static GtkWidget *entry_player1;
-static GtkWidget *entry_player2;
+static GtkWidget *entry_cmds[NUM_CLIENTS];
 static GtkWidget *list;
-static GtkWidget *textviews[4];
-static GtkTextBuffer *buffers[4];
+static GtkWidget *textviews[NUM_CHANNELS];
+static GtkTextBuffer *buffers[NUM_CHANNELS];
 static gboolean is_running = FALSE;
 
 /* get the name of the starting textmark - result must be freed */
@@ -77,8 +75,7 @@ start_animation_timeout()
 
 /* add incoming text to a buffer, and save it in the store */
 void
-append_text(const gchar *text, gsize len,
-            gboolean is_client1, gboolean is_stdout)
+append_text(const gchar *text, gsize len, guint8 channel_type)
 {
   gchar *player_column = NULL;
   gchar *desc_column;
@@ -98,13 +95,13 @@ append_text(const gchar *text, gsize len,
                                               NULL, nrows - 1))) {
   case TRUE: {
     /* at least one entry exists - check if this should be updated */
-    gboolean is_client1_temp;
+    gboolean is_client0_temp;
     gtk_tree_model_get(GTK_TREE_MODEL(store), &iter,
-                       IS_CLIENT1_COLUMN, &is_client1_temp,
+                       IS_CLIENT0_COLUMN, &is_client0_temp,
                        STDOUT_COLUMN, &stdout_column,
                        -1);
     /* did we receive more data from the same client? */
-    if (is_client1 == is_client1_temp) {
+    if ((CLIENT_ID(channel_type) == 0) == is_client0_temp) {
       --nrows;
       break;
     }
@@ -121,7 +118,7 @@ append_text(const gchar *text, gsize len,
     /* add buffer textmarks */
     mark_name_begin = get_mark_name_begin(nrows);
     mark_name_end = get_mark_name_end(nrows);
-    for (i = 0; i < 4; ++i) {
+    for (i = 0; i < NUM_CHANNELS; ++i) {
       GtkTextIter it;
       gtk_text_buffer_get_end_iter(buffers[i], &it);
       gtk_text_buffer_create_mark(buffers[i], mark_name_begin, &it, TRUE);
@@ -142,7 +139,7 @@ append_text(const gchar *text, gsize len,
     GtkTextIter iter;
     GtkTextMark *mark;
     gchar *mark_name_end;
-    GtkTextBuffer *buffer = buffers[is_client1*2+is_stdout];
+    GtkTextBuffer *buffer = buffers[channel_type];
     gtk_text_buffer_get_end_iter(buffer, &iter);
     gtk_text_buffer_insert(buffer, &iter, text, len);
     mark_name_end = get_mark_name_end(nrows);
@@ -156,7 +153,7 @@ append_text(const gchar *text, gsize len,
   desc_column = g_strdup("Unparsable move");
 
   /* concatenate strings if stdout data was received more than once */
-  if (is_stdout) {
+  if (IS_STDOUT(channel_type)) {
     gchar *buffer;
     /* get null-terminated string */
     buffer = g_strndup(text, len);
@@ -250,7 +247,7 @@ append_text(const gchar *text, gsize len,
                      DESC_COLUMN, desc_column,
                      BOARD_COLUMN, board_column,
                      MOVES_COLUMN, moves_column,
-                     IS_CLIENT1_COLUMN, is_client1,
+                     IS_CLIENT0_COLUMN, CLIENT_ID(channel_type) == 0,
                      STDOUT_COLUMN, stdout_column,
                      -1);
   g_free(player_column);
@@ -294,7 +291,7 @@ static void
 wipe_buffers()
 {
   guint8 i;
-  for (i = 0; i < 4; ++i) {
+  for (i = 0; i < NUM_CHANNELS; ++i) {
     buffers[i] = gtk_text_buffer_new(NULL);
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(textviews[i]), buffers[i]);
     gtk_text_buffer_create_tag(buffers[i], "emph",
@@ -308,6 +305,7 @@ wipe_buffers()
 static gchar *
 get_client_description(guint16 n, const client_t * const client)
 {
+  ++n;
   if (client->is_running) {
     return g_strdup_printf("Player %" G_GUINT16_FORMAT
                            " (pid %d) is running.", n, client->pid);
@@ -328,7 +326,7 @@ update_status(const client_t clients[NUM_CLIENTS])
     gchar *descriptions[NUM_CLIENTS+1];
     guint8 i;
     for (i=0; i<NUM_CLIENTS; ++i) {
-      descriptions[i] = get_client_description(i+1, &clients[i]);
+      descriptions[i] = get_client_description(i, &clients[i]);
       is_running |= clients[i].is_running;
     }
     descriptions[NUM_CLIENTS] = NULL;
@@ -454,8 +452,8 @@ run_kill_clicked_callback(GtkWidget *widget, gpointer user_data)
     free_store();
     wipe_buffers();
 
-    cmds[0] = gtk_entry_get_text(GTK_ENTRY(entry_player1));
-    cmds[1] = gtk_entry_get_text(GTK_ENTRY(entry_player2));
+    cmds[0] = gtk_entry_get_text(GTK_ENTRY(entry_cmds[0]));
+    cmds[1] = gtk_entry_get_text(GTK_ENTRY(entry_cmds[1]));
     launch_clients(cmds, &error);
     if (error != NULL) {
       print_error(error->message);
@@ -508,7 +506,7 @@ highlight_text(GtkTreePath *path)
   mark_name_begin = get_mark_name_begin(row);
   mark_name_end = get_mark_name_end(row);
 
-  for (i = 0; i < 4; ++i) {
+  for (i = 0; i < NUM_CHANNELS; ++i) {
     GtkTextIter iter_begin;
     GtkTextIter iter_end;
     GtkTextMark *mark_begin;
@@ -673,13 +671,7 @@ create_player_buffer(const gchar *name,
 
 /* create a panel for one player, with stdout, stderr and command line */
 static GtkWidget *
-create_player_panel(const gchar *name,
-                    GtkWidget **textview_stdout,
-                    GtkWidget **textview_stderr,
-                    GtkTextBuffer **buffer_stdout,
-                    GtkTextBuffer **buffer_stderr,
-                    GtkWidget **entry,
-                    const gchar *cmd)
+create_player_panel(guint8 id)
 {
   GtkWidget *frame_outer;
   GtkWidget *box;
@@ -687,27 +679,36 @@ create_player_panel(const gchar *name,
   GtkWidget *box_inner;
   GtkWidget *label_cmd;
 
-  frame_outer = gtk_frame_new(name);
+  assert(id < NUM_CLIENTS);
+
+  {
+    gchar *name;
+    name = g_strdup_printf("Player %u", (unsigned int)id + 1);
+    frame_outer = gtk_frame_new(name);
+    g_free(name);
+  }
   box = gtk_vbox_new(FALSE, BORDER);
   gtk_container_set_border_width(GTK_CONTAINER(box), BORDER);
   paned = gtk_vpaned_new();
   gtk_container_add(GTK_CONTAINER(frame_outer), box);
   gtk_box_pack_start(GTK_BOX(box), paned, TRUE, TRUE, 0);
   gtk_paned_pack1(GTK_PANED(paned),
-                  create_player_buffer("Standard Output:", textview_stdout,
-                                       buffer_stdout),
+                  create_player_buffer("Standard Output:",
+                                       &textviews[CHANNEL_ID(id, STDOUT)],
+                                       &buffers[CHANNEL_ID(id, STDOUT)]),
                   TRUE, TRUE);
   gtk_paned_pack2(GTK_PANED(paned),
-                  create_player_buffer("Standard Error:", textview_stderr,
-                                       buffer_stderr),
+                  create_player_buffer("Standard Error:",
+                                       &textviews[CHANNEL_ID(id, STDERR)],
+                                       &buffers[CHANNEL_ID(id, STDERR)]),
                   TRUE, TRUE);
   label_cmd = gtk_label_new("Command line:");
-  *entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(*entry), cmd);
+  entry_cmds[id] = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(entry_cmds[id]), default_cmds[id]);
   box_inner = gtk_vbox_new(FALSE, 0);
   gtk_box_pack_start(GTK_BOX(box_inner), label_cmd, FALSE, FALSE, 0);
   gtk_misc_set_alignment(GTK_MISC(label_cmd), 0, 0);
-  gtk_container_add(GTK_CONTAINER(box_inner), *entry);
+  gtk_container_add(GTK_CONTAINER(box_inner), entry_cmds[id]);
   gtk_box_pack_start(GTK_BOX(box), box_inner, FALSE, FALSE, 0);
   return frame_outer;
 }
@@ -863,27 +864,14 @@ create_window_with_widgets()
   /* build player output and command line section */
   {
     GtkWidget *paned_players;
+    guint8 i;
 
     paned_players = gtk_hpaned_new();
     gtk_paned_pack2(GTK_PANED(paned), paned_players, FALSE, TRUE);
-    gtk_paned_pack1(GTK_PANED(paned_players),
-                    create_player_panel("Player 1",
-                                        textviews + STDOUT1,
-                                        textviews + STDERR1,
-                                        buffers + STDOUT1,
-                                        buffers + STDERR1,
-                                        &entry_player1,
-                                        default_cmd1),
-                    TRUE, TRUE);
-    gtk_paned_pack2(GTK_PANED(paned_players),
-                    create_player_panel("Player 2",
-                                        textviews + STDOUT2,
-                                        textviews + STDERR2,
-                                        buffers + STDOUT2,
-                                        buffers + STDERR2,
-                                        &entry_player2,
-                                        default_cmd2),
-                    TRUE, TRUE);
+    for (i = 0; i < NUM_CLIENTS; ++i) {
+      (i == 0 ? gtk_paned_pack1 : gtk_paned_pack2)
+        (GTK_PANED(paned_players), create_player_panel(i), TRUE, TRUE);
+    }
   }
 
   gtk_widget_show_all(window);
