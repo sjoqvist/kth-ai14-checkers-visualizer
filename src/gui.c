@@ -75,13 +75,148 @@ start_animation_timeout()
   is_animation_stalled = FALSE;
 }
 
+/* parse the line that the client writes to stdin */
+static gboolean
+parse_client_stdout(gchar   *move_line,
+                    gchar  **board,
+                    GSList **moves,
+                    gchar  **description,
+                    gchar  **player)
+{
+  gchar **split_line;
+  guint n_squares;
+  int action;
+
+  assert(board != NULL && *board == NULL);
+  assert(moves != NULL && *moves == NULL);
+  assert(description != NULL && *description == NULL);
+  assert(player != NULL && *player == NULL);
+
+  if (move_line == NULL) return FALSE;
+
+  /* split_line needs to be freed before every return statement */
+  split_line = g_strsplit(move_line, " ", 0);
+
+  /* we need at least the three first sequences to parse */
+  if (g_strv_length(split_line) < 3) {
+    g_strfreev(split_line);
+    return FALSE;
+  }
+
+  /* the first sequence needs to correspond to the board size */
+  if (strlen(split_line[0]) != NUM_DARK_SQ) {
+    g_strfreev(split_line);
+    return FALSE;
+  }
+
+  {
+    gchar **strv_moves;
+    /* strv_moves needs to be freed before leaving this block */
+    strv_moves = g_strsplit(split_line[1], "_", 0);
+    n_squares = g_strv_length(strv_moves);
+
+    /* str_action should be non-empty, and thus strv_moves as well */
+    assert(n_squares != 0);
+
+    action = atoi(strv_moves[0]);
+
+    /* the action identifier is not one of the squares */
+    --n_squares;
+
+    /* verify that the action is legal and that it has a corresponding
+       number of moves in the sequence */
+    if ((action  < -5) ||
+        (action  <  0  &&  n_squares != 0) ||
+        (action ==  0  &&  n_squares != 2) ||
+        (action  >  0  &&  n_squares != 1 + (guint)action)) {
+      g_strfreev(strv_moves);
+      g_strfreev(split_line);
+      return FALSE;
+    }
+
+    /* early return if this is a special action */
+    if (action < 0) {
+      static const gchar * const special_actions[5] = {
+        "Initial setup", /* -1 */
+        "Red wins",      /* -2 */
+        "White wins",    /* -3 */
+        "Draw",          /* -4 */
+        "Null move",     /* -5 */
+      };
+
+      *description = g_strdup(special_actions[-1-action]);
+      *board = g_strdup(split_line[0]);
+      g_strfreev(strv_moves);
+      g_strfreev(split_line);
+      return TRUE;
+    }
+
+    /* read the integers from the array of squares */
+    {
+      guint i;
+      /* read backwards, since prepending the linked list is cheaper */
+      for (i = n_squares; i != 0; --i) {
+        const int sq = atoi(strv_moves[i]);
+
+        /* verify that the number is in range, otherwise quit */
+        if (sq < 1 || sq > NUM_DARK_SQ) {
+          /* illegal value, restore and abort */
+          g_slist_free(*moves);
+          *moves = NULL;
+          g_strfreev(strv_moves);
+          g_strfreev(split_line);
+          return FALSE;
+        }
+        *moves = g_slist_prepend(*moves, GINT_TO_POINTER(sq - 1));
+      }
+    }
+    g_strfreev(strv_moves);
+  }
+
+  *player = g_strdup(strcmp(split_line[2], "r") == 0 ? "[W]" : "[R]");
+  *board = g_strdup(split_line[0]);
+
+  /* generate the description string and the list of moves */
+  {
+    GSList *move = *moves;
+    /* moves are written "A-B", and jumps "AxB", "AxBxC", ... */
+    const gchar * const append_string = (action == 0) ? "-%d" : "x%d";
+
+    /* a reasonable starting length is the length of the input string */
+    GString *desc = g_string_sized_new(strlen(split_line[1]));
+    int old;
+
+    /* there should be at least two squares in the list */
+    assert(move != NULL);
+    old = GPOINTER_TO_INT(move->data);
+
+    /* write the first value, without leading "-" or "x" */
+    g_string_append_printf(desc, "%d", old + 1);
+
+    while ((move = g_slist_next(move)) != NULL) {
+      const int new = GPOINTER_TO_INT(move->data);
+      g_string_append_printf(desc, append_string, new + 1);
+
+      /* figure out which square we're jumping over, and mark it "x" */
+      if (action > 0) (*board)[(old + new)/2 + ((new&4) == 0)] = 'x';
+
+      old = new;
+    }
+    /* free the GString but keep the character data */
+    *description = g_string_free(desc, FALSE);
+  }
+
+  g_strfreev(split_line);
+  return TRUE;
+}
+
 /* add incoming text to a buffer, and save it in the store */
 void
 append_text(const gchar *text, gsize len, guint8 channel_type)
 {
   gchar *player_column = NULL;
-  gchar *desc_column;
-  gchar *board_column = NULL;
+  gchar *desc_column   = NULL;
+  gchar *board_column  = NULL;
   GSList *moves_column = NULL;
   gchar *stdout_column = NULL;
   GtkListStore *store;
@@ -97,13 +232,13 @@ append_text(const gchar *text, gsize len, guint8 channel_type)
                                               NULL, nrows - 1))) {
   case TRUE: {
     /* at least one entry exists - check if this should be updated */
-    gboolean is_client0_temp;
+    gboolean is_client0;
     gtk_tree_model_get(GTK_TREE_MODEL(store), &iter,
-                       IS_CLIENT0_COLUMN, &is_client0_temp,
+                       IS_CLIENT0_COLUMN, &is_client0,
                        STDOUT_COLUMN, &stdout_column,
                        -1);
     /* did we receive more data from the same client? */
-    if ((CLIENT_ID(channel_type) == 0) == is_client0_temp) {
+    if ((CLIENT_ID(channel_type) == 0) == is_client0) {
       --nrows;
       break;
     }
@@ -151,9 +286,6 @@ append_text(const gchar *text, gsize len, guint8 channel_type)
     g_free(mark_name_end);
   }
 
-  /* default description (hopefully gets overwritten) */
-  desc_column = g_strdup("Unparsable move");
-
   /* concatenate strings if stdout data was received more than once */
   if (IS_STDOUT(channel_type)) {
     gchar *buffer;
@@ -168,79 +300,18 @@ append_text(const gchar *text, gsize len, guint8 channel_type)
       stdout_column = temp;
     }
   }
-  /* parse the move */
-  {
-    gchar board[34];
-    gchar moves_str[256];
-    int moves[256];
-    gchar player;
-    if (stdout_column != NULL &&
-        sscanf(stdout_column, "%33s %255s %c", board,
-               moves_str, &player) == 3 &&
-        strlen(board) == 32) {
-      guint moves_length;
-      gchar *player_temp = NULL;
-      gchar *desc_temp = NULL;
-      {
-        gchar **movesv;
-        guint i;
-        movesv = g_strsplit(moves_str, "_", 0);
-        moves_length = g_strv_length(movesv);
-        if (moves_length > 0) {
-          moves[0] = atoi(movesv[0]);
-          if (moves[0] >= 0) {
-            desc_temp = g_strjoinv(moves[0] == 0 ? "-" : "x", movesv + 1);
-            player_temp = g_strdup(player == 'r' ? "[W]" : "[R]");
-          }
-          for (i = 1; i < moves_length; ++i) {
-            moves[i] = atoi(movesv[i]) - 1;
-            if (moves[i] < 0 || moves[i] > 31) {
-              /* illegal value, avoid parsing */
-              moves_length = 0;
-            }
-          }
-        }
-        g_strfreev(movesv);
-      }
-      if (moves_length == 1 && moves[0] >= -5 && moves[0] <= -1) {
-        static const gchar * const special_actions[] = {
-          "Null move",    /* -5 */
-          "Draw",         /* -4 */
-          "White wins",   /* -3 */
-          "Red wins",     /* -2 */
-          "Initial setup" /* -1 */
-        };
-        g_free(desc_column);
-        desc_column = g_strdup(special_actions[moves[0]+5]);
-        board_column = g_strdup(board);
-      } else if (moves_length == 3 && moves[0] == 0) {
-        board_column = g_strdup(board);
-        player_column = player_temp;
-        g_free(desc_column);
-        desc_column = desc_temp;
-        while (--moves_length > 0) {
-          moves_column = g_slist_append(moves_column,
-                                        GINT_TO_POINTER(moves[moves_length]));
-        }
-      } else if (moves_length > 2 && moves[0] > 0 &&
-                 moves_length == 2 + (guint)moves[0]) {
-        guint i;
-        for (i = 2; i < moves_length; ++i) {
-          board[(moves[i-1] + moves[i])/2 + ((moves[i]&4) == 0)] = 'x';
-        }
-        board_column = g_strdup(board);
-        player_column = player_temp;
-        g_free(desc_column);
-        desc_column = desc_temp;
-        while (--moves_length > 0) {
-          moves_column = g_slist_append(moves_column,
-                                        GINT_TO_POINTER(moves[moves_length]));
-        }
-      } else {
-        g_free(player_temp);
-        g_free(desc_temp);
-      }
-    }
+
+  if (parse_client_stdout(stdout_column, &board_column, &moves_column,
+                          &desc_column, &player_column)) {
+    assert(board_column != NULL);
+    assert(desc_column != NULL);
+  } else {
+    assert(board_column == NULL);
+    assert(moves_column == NULL);
+    assert(desc_column == NULL);
+    assert(player_column == NULL);
+
+    desc_column = g_strdup("Unparsable move");
   }
 
   /* update the store entry */

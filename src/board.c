@@ -7,6 +7,8 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include "board.h"
+#include "gui.h"
+#include "main.h"
 
 /* -- macros for colors */
 /* square and piece color definitions - borrowed from the problem statement */
@@ -65,9 +67,6 @@
 #define BOARD_COL(i) ((((i)&3)<<1) | (((i)&4)==0))
 
 /* -- macros meant to make the code easier to read */
-/* "for" loop limit when iterating over the dark squares in the board */
-#define NUM_DARK_SQ 32
-
 /* floating point arithmetic isn't commutative, so to allow the compiler to
    pre-calculate constants if we're planning to draw off-center, SQ_CENTER
    should be placed together with the other constant _within parentheses_ */
@@ -75,10 +74,6 @@
 
 /* CENTER is to be used iff we're not adding another constant afterwards */
 #define CENTER(x) ((x)+SQ_CENTER)
-
-/* make numeric constant into string */
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
 
 /*
  * Function: draw_pieces

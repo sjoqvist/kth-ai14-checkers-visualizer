@@ -14,6 +14,9 @@
 #define CLIENT_ID(channel) ((channel) >> 1)
 #define CHANNEL_ID(client, type) (((client) << 1) | (type))
 
+/* limit when iterating over the dark squares in the board */
+#define NUM_DARK_SQ 32
+
 void
 append_text(const gchar *text, gsize len, guint8 channel_type);
 
