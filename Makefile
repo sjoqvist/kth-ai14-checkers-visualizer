@@ -8,7 +8,7 @@ BUILDDIR=build
 OBJDIR=$(BUILDDIR)/obj
 # These are dependency templates for each .o file. The .c file must be first.
 DEPS=\
- board.c:board.h \
+ board.c:board.h:clients.h:gui.h:main.h \
  clients.c:clients.h:gui.h:main.h \
  gui.c:board.h:clients.h:gui.h:main.h \
  main.c:gui.h:clients.h:main.h
