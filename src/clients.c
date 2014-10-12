@@ -168,7 +168,7 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
 
 /* send SIGTERM to any running child process */
 void
-kill_clients()
+kill_clients(void)
 {
   guint8 i;
   for (i = 0; i < NUM_CLIENTS; ++i) {

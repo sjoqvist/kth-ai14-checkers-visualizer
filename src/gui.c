@@ -57,7 +57,7 @@ get_mark_name_end(gint row)
 
 /* start or restart animation */
 static void
-start_animation_timeout()
+start_animation_timeout(void)
 {
   extern guint option_timeout_ms;
   source_timeout = g_timeout_add(option_timeout_ms,
@@ -340,7 +340,7 @@ free_move(GtkTreeModel *model,
 
 /* release and clear information in the store */
 static void
-release_resources()
+release_resources(void)
 {
   GtkListStore *store;
 
@@ -355,7 +355,7 @@ release_resources()
 
 /* create new buffers for the textviews */
 static void
-wipe_buffers()
+wipe_buffers(void)
 {
   guint8 i;
   for (i = 0; i < NUM_CHANNELS; ++i) {
@@ -788,7 +788,7 @@ create_player_panel(guint8 id)
 
 /* master function to build the GUI */
 void
-create_window_with_widgets()
+create_window_with_widgets(void)
 {
   extern gboolean option_run;
   extern gboolean option_maximize;

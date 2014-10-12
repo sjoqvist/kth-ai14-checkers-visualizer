@@ -27,6 +27,6 @@ void
 print_error(gchar *message);
 
 void
-create_window_with_widgets();
+create_window_with_widgets(void);
 
 #endif /* GUI_H */
