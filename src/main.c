@@ -45,16 +45,16 @@ static const gchar *usage_misc =
 /* I hope this is sufficient to fool harvesters */
 static gchar obfuscated_email[] = "KCTVDJ|L(*9='\x7f'#";
 
-gchar   *default_cmds[NUM_CLIENTS] = { "", "" };
-gboolean default_animate           = TRUE;
-gboolean default_run               = FALSE;
-guint    default_timeout           = 1000;
+gchar   *option_cmds[NUM_CLIENTS] = { "", "" };
+gboolean option_animate           = TRUE;
+gboolean option_run               = FALSE;
+guint    option_timeout_ms        = 1000;
 
-gchar   *default_font              = "monospace 8";
-gboolean default_maximize          = FALSE;
-gboolean default_quit              = FALSE;
-gint     default_width             = 600;
-gint     default_height            = 650;
+gchar   *option_font              = "monospace 8";
+gboolean option_maximize          = FALSE;
+gboolean option_quit              = FALSE;
+gint     option_width_px          = 600;
+gint     option_height_px         = 650;
 
 static gboolean display_help = FALSE;
 
@@ -65,43 +65,43 @@ parse_options(int argc, char **argv)
   while((opt = getopt(argc, argv, "1:2:aAf:hmqrRt:x:y:")) != -1) {
     switch (opt) {
     case '1':
-      default_cmds[0] = optarg;
+      option_cmds[0] = optarg;
       break;
     case '2':
-      default_cmds[1] = optarg;
+      option_cmds[1] = optarg;
       break;
     case 'a':
-      default_animate = TRUE;
+      option_animate = TRUE;
       break;
     case 'A':
-      default_animate = FALSE;
+      option_animate = FALSE;
       break;
     case 'f':
-      default_font = optarg;
+      option_font = optarg;
       break;
     case 'h':
       display_help = TRUE;
       break;
     case 'm':
-      default_maximize = TRUE;
+      option_maximize = TRUE;
       break;
     case 'q':
-      default_quit = TRUE;
+      option_quit = TRUE;
       break;
     case 'r':
-      default_run = TRUE;
+      option_run = TRUE;
       break;
     case 'R':
-      default_run = FALSE;
+      option_run = FALSE;
       break;
     case 't':
-      sscanf(optarg, "%u", &default_timeout);
+      sscanf(optarg, "%u", &option_timeout_ms);
       break;
     case 'x':
-      default_width = atoi(optarg);
+      option_width_px = atoi(optarg);
       break;
     case 'y':
-      default_height = atoi(optarg);
+      option_height_px = atoi(optarg);
       break;
     default:
       display_help = TRUE;

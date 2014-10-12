@@ -12,16 +12,16 @@
 static gboolean
 animation_timeout_callback(gpointer user_data);
 
-extern gchar   *default_cmds[NUM_CLIENTS];
-extern gboolean default_animate;
-extern gboolean default_run;
-extern guint    default_timeout;
+extern gchar   *option_cmds[NUM_CLIENTS];
+extern gboolean option_animate;
+extern gboolean option_run;
+extern guint    option_timeout_ms;
 
-extern gchar   *default_font;
-extern gboolean default_maximize;
-extern gboolean default_quit;
-extern gint     default_width;
-extern gint     default_height;
+extern gchar   *option_font;
+extern gboolean option_maximize;
+extern gboolean option_quit;
+extern gint     option_width_px;
+extern gint     option_height_px;
 
 enum {
   PLAYER_COLUMN,
@@ -70,7 +70,7 @@ get_mark_name_end(gint row)
 static void
 start_animation_timeout()
 {
-  source_timeout = g_timeout_add(default_timeout,
+  source_timeout = g_timeout_add(option_timeout_ms,
                                  animation_timeout_callback, NULL);
   is_animation_stalled = FALSE;
 }
@@ -496,7 +496,7 @@ animation_timeout_callback(gpointer user_data)
       gtk_tree_view_set_cursor(GTK_TREE_VIEW(list), path, NULL, FALSE);
       gtk_tree_path_free(path);
     } else {
-      if (!is_running && default_quit) {
+      if (!is_running && option_quit) {
         gtk_widget_destroy(window);
       }
       is_animation_stalled = TRUE;
@@ -739,7 +739,7 @@ create_player_buffer(const gchar *name,
   gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(*textview), GTK_WRAP_WORD);
   {
     PangoFontDescription *fontdesc;
-    fontdesc = pango_font_description_from_string(default_font);
+    fontdesc = pango_font_description_from_string(option_font);
     gtk_widget_modify_font(*textview, fontdesc);
     pango_font_description_free(fontdesc);
   }
@@ -784,7 +784,7 @@ create_player_panel(guint8 id)
                   TRUE, TRUE);
   label_cmd = gtk_label_new("Command line:");
   entry_cmds[id] = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(entry_cmds[id]), default_cmds[id]);
+  gtk_entry_set_text(GTK_ENTRY(entry_cmds[id]), option_cmds[id]);
   box_inner = gtk_vbox_new(FALSE, 0);
   gtk_box_pack_start(GTK_BOX(box_inner), label_cmd, FALSE, FALSE, 0);
   gtk_misc_set_alignment(GTK_MISC(label_cmd), 0, 0);
@@ -803,8 +803,8 @@ create_window_with_widgets()
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(window), "Checkers Visualizer");
   gtk_window_set_default_size(GTK_WINDOW(window),
-                              default_width, default_height);
-  if (default_maximize) {
+                              option_width_px, option_height_px);
+  if (option_maximize) {
     gtk_window_maximize(GTK_WINDOW(window));
   }
   g_signal_connect(G_OBJECT(window), "destroy",
@@ -929,7 +929,7 @@ create_window_with_widgets()
       gtk_box_pack_end(GTK_BOX(box), btn_run_kill, FALSE, FALSE, 0);
       btn_animate = gtk_toggle_button_new_with_label("Animate");
       gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(btn_animate),
-                                   default_animate);
+                                   option_animate);
       gtk_widget_set_size_request(btn_animate, 80, 35);
       gtk_box_pack_end(GTK_BOX(box), btn_animate, FALSE, FALSE, 0);
       gtk_table_attach(GTK_TABLE(table), box, 1, 2, 1, 2,
@@ -956,7 +956,7 @@ create_window_with_widgets()
 
   gtk_widget_show_all(window);
 
-  if (default_run) {
+  if (option_run) {
     gtk_button_clicked(GTK_BUTTON(btn_run_kill));
   }
 }
