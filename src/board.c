@@ -44,9 +44,9 @@
 
 /* linewidths and circle/mark radii */
 #define MOVE_LINEWIDTH         .04
-#define PIECE_CIRCLE_LINEWIDTH .03
+#define PIECE_BORDER_LINEWIDTH .03
 #define KING_MARK_LINEWIDTH    .05
-#define PIECE_CIRCLE_RADIUS    .3
+#define PIECE_RADIUS           .3
 #define KING_MARK_RADIUS       .15
 
 /* -- macros to get the row and column for a dark square in the range 0..31 */
@@ -101,8 +101,8 @@ draw_pieces(cairo_t * const cr, const gchar * const board, const gchar player)
     if ((board[i] & ~0x20) == player) {
       const guint8 x = BOARD_COL(i);
       const guint8 y = BOARD_ROW(i);
-      cairo_move_to(cr, x+(SQ_CENTER+PIECE_CIRCLE_RADIUS), CENTER(y));
-      cairo_arc(cr, CENTER(x), CENTER(y), PIECE_CIRCLE_RADIUS, 0., 2*G_PI);
+      cairo_move_to(cr, x+(SQ_CENTER+PIECE_RADIUS), CENTER(y));
+      cairo_arc(cr, CENTER(x), CENTER(y), PIECE_RADIUS, 0., 2*G_PI);
     }
   }
 }
@@ -241,7 +241,7 @@ draw_board(cairo_t      * const cr,
   /* draw removed pieces - before movement lines (place below) */
   draw_pieces(cr, board, 'X');
   cairo_set_source_rgb(cr, BORDER_R, BORDER_G, BORDER_B);
-  cairo_set_line_width(cr, PIECE_CIRCLE_LINEWIDTH);
+  cairo_set_line_width(cr, PIECE_BORDER_LINEWIDTH);
   cairo_stroke(cr);
 
   /* draw moves - before remaining pieces (place below) */
@@ -251,7 +251,7 @@ draw_board(cairo_t      * const cr,
   cairo_stroke(cr);
 
   /* set linewidth for both colors of pieces */
-  cairo_set_line_width(cr, PIECE_CIRCLE_LINEWIDTH);
+  cairo_set_line_width(cr, PIECE_BORDER_LINEWIDTH);
 
   /* draw red pieces */
   draw_pieces(cr, board, 'R');
