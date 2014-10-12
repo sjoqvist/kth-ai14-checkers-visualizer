@@ -12,17 +12,6 @@
 static gboolean
 animation_timeout_callback(gpointer user_data);
 
-extern gchar   *option_cmds[NUM_CLIENTS];
-extern gboolean option_animate;
-extern gboolean option_run;
-extern guint    option_timeout_ms;
-
-extern gchar   *option_font;
-extern gboolean option_maximize;
-extern gboolean option_quit;
-extern gint     option_width_px;
-extern gint     option_height_px;
-
 enum {
   PLAYER_COLUMN,
   DESC_COLUMN,
@@ -70,6 +59,7 @@ get_mark_name_end(gint row)
 static void
 start_animation_timeout()
 {
+  extern guint option_timeout_ms;
   source_timeout = g_timeout_add(option_timeout_ms,
                                  animation_timeout_callback, NULL);
   is_animation_stalled = FALSE;
@@ -496,6 +486,7 @@ animation_timeout_callback(gpointer user_data)
       gtk_tree_view_set_cursor(GTK_TREE_VIEW(list), path, NULL, FALSE);
       gtk_tree_path_free(path);
     } else {
+      extern gboolean option_quit;
       if (!is_running && option_quit) {
         gtk_widget_destroy(window);
       }
@@ -738,6 +729,7 @@ create_player_buffer(const gchar *name,
   gtk_text_view_set_editable(GTK_TEXT_VIEW(*textview), FALSE);
   gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(*textview), GTK_WRAP_WORD);
   {
+    extern gchar *option_font;
     PangoFontDescription *fontdesc;
     fontdesc = pango_font_description_from_string(option_font);
     gtk_widget_modify_font(*textview, fontdesc);
@@ -753,6 +745,7 @@ create_player_buffer(const gchar *name,
 static GtkWidget *
 create_player_panel(guint8 id)
 {
+  extern gchar *option_cmds[NUM_CLIENTS];
   GtkWidget *frame_outer;
   GtkWidget *box;
   GtkWidget *paned;
@@ -797,6 +790,11 @@ create_player_panel(guint8 id)
 void
 create_window_with_widgets()
 {
+  extern gboolean option_run;
+  extern gboolean option_maximize;
+  extern gint     option_width_px;
+  extern gint     option_height_px;
+
   GtkWidget *paned;
 
   /* create the main window */
@@ -921,6 +919,7 @@ create_window_with_widgets()
     }
     /* place the buttons */
     {
+      extern gboolean option_animate;
       GtkWidget *box;
 
       box = gtk_hbox_new(FALSE, 0);
