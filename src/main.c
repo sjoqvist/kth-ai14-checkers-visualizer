@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 2
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -56,12 +57,16 @@ gboolean option_quit              = FALSE;
 gint     option_width_px          = 600;
 gint     option_height_px         = 650;
 
-static gboolean display_help = FALSE;
-
 static gboolean
-parse_options(int argc, char **argv)
+parse_options(const int        argc,
+              char * const    *argv,
+              gboolean * const display_help)
 {
   int opt;
+
+  assert(display_help != NULL);
+  assert(*display_help == FALSE);
+
   while((opt = getopt(argc, argv, "1:2:aAf:hmqrRt:x:y:")) != -1) {
     switch (opt) {
     case '1':
@@ -80,7 +85,7 @@ parse_options(int argc, char **argv)
       option_font = optarg;
       break;
     case 'h':
-      display_help = TRUE;
+      *display_help = TRUE;
       break;
     case 'm':
       option_maximize = TRUE;
@@ -104,7 +109,7 @@ parse_options(int argc, char **argv)
       option_height_px = atoi(optarg);
       break;
     default:
-      display_help = TRUE;
+      *display_help = TRUE;
       return FALSE;
     }
   }
@@ -115,7 +120,8 @@ int
 main(int argc, char **argv)
 {
   gboolean options_success;
-  options_success = parse_options(argc, argv);
+  gboolean display_help = FALSE;
+  options_success = parse_options(argc, argv, &display_help);
 
   if (display_help) {
     guint8 i;
