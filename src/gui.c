@@ -426,7 +426,7 @@ expose_event_callback(GtkWidget *widget,
   UNUSED(event);
   UNUSED(user_data);
 
-  cr = gdk_cairo_create(widget->window);
+  cr = gdk_cairo_create(gtk_widget_get_window(widget));
   draw_board(cr, widget->allocation.width, widget->allocation.height,
              str_board, list_moves);
   cairo_destroy(cr);
