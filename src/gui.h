@@ -18,7 +18,7 @@
 #define NUM_DARK_SQ 32
 
 void
-append_text(const gchar *text, gsize len, guint8 channel_type);
+append_text(const gchar *text, gsize len, guint8 channel_id);
 
 void
 update_status(const client_t clients[NUM_CLIENTS]);

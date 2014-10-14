@@ -202,7 +202,7 @@ parse_client_stdout(gchar   *move_line,
 
 /* add incoming text to a buffer, and save it in the store */
 void
-append_text(const gchar *text, gsize len, guint8 channel_type)
+append_text(const gchar *text, gsize len, guint8 channel_id)
 {
   gchar *player_column = NULL;
   gchar *desc_column   = NULL;
@@ -228,7 +228,7 @@ append_text(const gchar *text, gsize len, guint8 channel_type)
                        STDOUT_COLUMN, &stdout_column,
                        -1);
     /* did we receive more data from the same client? */
-    if ((CLIENT_ID(channel_type) == 0) == is_client0) {
+    if ((CLIENT_ID(channel_id) == 0) == is_client0) {
       --nrows;
       break;
     }
@@ -266,7 +266,7 @@ append_text(const gchar *text, gsize len, guint8 channel_type)
     GtkTextIter iter;
     GtkTextMark *mark;
     gchar *mark_name_end;
-    GtkTextBuffer *buffer = buffers[channel_type];
+    GtkTextBuffer *buffer = buffers[channel_id];
     gtk_text_buffer_get_end_iter(buffer, &iter);
     gtk_text_buffer_insert(buffer, &iter, text, len);
     mark_name_end = get_mark_name_end(nrows);
@@ -277,7 +277,7 @@ append_text(const gchar *text, gsize len, guint8 channel_type)
   }
 
   /* concatenate strings if stdout data was received more than once */
-  if (IS_STDOUT(channel_type)) {
+  if (IS_STDOUT(channel_id)) {
     gchar *buffer;
     /* get null-terminated string */
     buffer = g_strndup(text, len);
@@ -310,7 +310,7 @@ append_text(const gchar *text, gsize len, guint8 channel_type)
                      DESC_COLUMN, desc_column,
                      BOARD_COLUMN, board_column,
                      MOVES_COLUMN, moves_column,
-                     IS_CLIENT0_COLUMN, CLIENT_ID(channel_type) == 0,
+                     IS_CLIENT0_COLUMN, CLIENT_ID(channel_id) == 0,
                      STDOUT_COLUMN, stdout_column,
                      -1);
   g_free(player_column);
