@@ -8,8 +8,11 @@ is performing. It allows the user to step forwards and backwards between
 the moves, viewing a graphical representation of what's going on
 together with highlighted client stdout and stderr output for the
 current move. The goal is to enable the user to get a better
-understanding and write a more efficient client. And of course, it's an
-excuse for me to play around with GTK+.
+understanding and write a more efficient client.
+
+Because of the limited scope and size of the project, it also serves as
+my personal testing ground for GTK+, Doxygen, Git, optimizations, coding
+styles and more.
 
 ![Screenshot of the Checkers Visualizer's main
 window](https://raw.github.com/aliquis/kth-ai14-checkers-visualizer/master/doc/screenshot.png)
@@ -325,7 +328,3 @@ Known issues
   CPU and continues to do so also after the clients have exited. This
   probably indicates that the GLib event loop is clogged with
   low-priority events. This should be investigated.
-
-Lacking/TODO (may or may not get fixed)
----------------------------------------
-* Overall clean-up (readability, documentation, separation of concerns).

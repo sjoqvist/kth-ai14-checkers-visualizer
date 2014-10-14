@@ -1,4 +1,12 @@
+/*!
+ * \file clients.c
+ * \brief
+ * Functions to launch and kill clients, and to pass data between them and to
+ * the GUI
+ */
+/*! \cond */
 #define _POSIX_C_SOURCE 1
+/*! \endcond */
 #include <assert.h>
 #include <sys/types.h>
 #include <signal.h>
@@ -7,15 +15,29 @@
 #include "main.h"
 #include "gui.h"
 
+/*! \brief Size of the buffer when reading from the client */
 #define BUFFER_SIZE (64<<10)
 
+/*! \brief Standard input channels for each of the clients */
 static GIOChannel *channel_stdin[NUM_CLIENTS] = { NULL, NULL };
 
+/*! \brief Information about the child processes */
 static client_t clients[NUM_CLIENTS] = {
   { 0, FALSE, 0 },
   { 0, FALSE, 0 }
 };
 
+/*!
+ * \brief
+ * Shuts down a pair of channels due to errors or end-of-file
+ *
+ * \param[in] channel_in   the channel that data was read from (i.e. stdout or
+ *                         stderr of the client where the error or end-of-file
+ *                         was discovered)
+ * \param[in] channel_out  the channel that data was written to (i.e. stdin of
+ *                         the corresponding client) if such exists, otherwise
+ *                         \c NULL
+ */
 static void
 stop_channels(GIOChannel *channel_in, GIOChannel *channel_out)
 {
@@ -29,7 +51,18 @@ stop_channels(GIOChannel *channel_in, GIOChannel *channel_out)
   g_io_channel_unref(channel_out);
 }
 
-/* callback for when new data as available in a pipe */
+/*!
+ * \brief
+ * Callback for when new data is available in a pipe
+ *
+ * \param[in] source     the event source
+ * \param[in] condition  the condition which has been satisfied
+ * \param[in] data       an integer as specified by #CHANNEL_ID, converted to
+ *                       a \c gpointer using \c GINT_TO_POINTER()
+ *
+ * \return
+ * \c FALSE when the event source should be removed, otherwise \c TRUE
+ */
 static gboolean
 io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
 {
@@ -70,7 +103,18 @@ io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
   return clients[CLIENT_ID(input_type)].is_running;
 }
 
-/* callback for when one of the child processes finished */
+/*!
+ * \brief
+ * Callback for when one of the child processes finishes
+ *
+ * The callback writes changes to ::clients provided through \p user_data, and
+ * causes the status bar to be updated.
+ *
+ * \param[in] pid       child process id
+ * \param[in] status    child exit status
+ * \param[in] user_data a pointer to the \ref client_t structure associated
+ *                      with this child
+ */
 static void
 child_exit_callback(GPid pid, gint status, gpointer user_data)
 {
@@ -85,6 +129,7 @@ child_exit_callback(GPid pid, gint status, gpointer user_data)
   update_status(clients);
 }
 
+/* documented in clients.h */
 void
 launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
 {
@@ -166,7 +211,7 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
   update_status(clients);
 }
 
-/* send SIGTERM to any running child process */
+/* documented in clients.h */
 void
 kill_clients(void)
 {

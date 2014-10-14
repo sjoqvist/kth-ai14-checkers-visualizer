@@ -1,6 +1,6 @@
-/*
- * board.c
- *
+/*!
+ * \file board.c
+ * \brief
  * Draws the board on a Cairo context, including squares, pieces and moves.
  */
 #include <assert.h>
@@ -12,78 +12,106 @@
 
 /* -- macros for colors */
 /* square and piece color definitions - borrowed from the problem statement */
-#define LIGHT_SQ_R ( 15./ 15.)
-#define LIGHT_SQ_G ( 14./ 15.)
-#define LIGHT_SQ_B ( 11./ 15.)
+#define LIGHT_SQ_R ( 15./ 15.) /*!< \brief Light square, red component */
+#define LIGHT_SQ_G ( 14./ 15.) /*!< \brief Light square, green component */
+#define LIGHT_SQ_B ( 11./ 15.) /*!< \brief Light square, blue component */
 
-#define DARK_SQ_R  (  5./ 15.)
-#define DARK_SQ_G  (  8./ 15.)
-#define DARK_SQ_B  (  2./ 15.)
+#define DARK_SQ_R  (  5./ 15.) /*!< \brief Dark square, red component */
+#define DARK_SQ_G  (  8./ 15.) /*!< \brief Dark square, green component */
+#define DARK_SQ_B  (  2./ 15.) /*!< \brief Dark square, blue component */
 
-#define RED_PL_R   (196./255.)
-#define RED_PL_G      0.
-#define RED_PL_B   (  3./255.)
+#define RED_PL_R   (196./255.) /*!< \brief Red player, red component */
+#define RED_PL_G   (  0./255.) /*!< \brief Red player, green component */
+#define RED_PL_B   (  3./255.) /*!< \brief Red player, blue component */
 
-#define WHITE_PL_R (255./255.)
-#define WHITE_PL_G (249./255.)
-#define WHITE_PL_B (244./255.)
+#define WHITE_PL_R (255./255.) /*!< \brief White player, red component */
+#define WHITE_PL_G (249./255.) /*!< \brief White player, green component */
+#define WHITE_PL_B (244./255.) /*!< \brief White player, blue component */
 
 /* color for the "move arrow" */
-#define MOVE_R        0.
-#define MOVE_G        0.
-#define MOVE_B        1.
+#define MOVE_R     (  0./255.) /*!< \brief Move arrow, red component */
+#define MOVE_G     (  0./255.) /*!< \brief Move arrow, green component */
+#define MOVE_B     (255./255.) /*!< \brief Move arrow, blue component */
 
 /* color for piece border (including the empty circle for removed pieces) */
-#define BORDER_R      0.
-#define BORDER_G      0.
-#define BORDER_B      0.
+#define BORDER_R   (  0./255.) /*!< \brief Piece border, red component */
+#define BORDER_G   (  0./255.) /*!< \brief Piece border, green component */
+#define BORDER_B   (  0./255.) /*!< \brief Piece border, blue component */
 
 /* -- macros for various sizes and distances */
-/* font size for the number in the corner of the square */
+/*!
+ * \brief
+ * Font size for the number in the corner of the square.
+ */
 #define SQUARE_NUMBER_FONTSIZE .35
 
 /* linewidths and circle/mark radii */
-#define MOVE_LINEWIDTH         .04
-#define PIECE_BORDER_LINEWIDTH .03
-#define KING_MARK_LINEWIDTH    .05
-#define PIECE_RADIUS           .3
-#define KING_MARK_RADIUS       .15
+#define MOVE_LINEWIDTH         .04 /*!< \brief Move arrow linewidth */
+#define PIECE_BORDER_LINEWIDTH .03 /*!< \brief Piece border linewidth */
+#define KING_MARK_LINEWIDTH    .05 /*!< \brief King mark linewidth */
+#define PIECE_RADIUS           .3  /*!< \brief Piece circle radius */
+#define KING_MARK_RADIUS       .15 /*!< \brief King mark size */
 
 /* -- macros to get the row and column for a dark square in the range 0..31 */
-/* the first one's simple */
+/*!
+ * \brief
+ * Gets the board row from a dark square index
+ */
 #define BOARD_ROW(i) ((i)/4)
-/* this is more complicated: use the three least significant bits, rotate them
- * to the left and flip the least significant bit, so that
- * [b_4, b_3, b_2, b_1, b_0] becomes [0, 0, b_1, b_0, !b_2], or in other words
- * (given that rows and columns are both in the range 0..7) map
- *  xx000 => 00001  (even row, column 1)
- *  xx001 => 00011  (even row, column 3)
- *  xx010 => 00101  (even row, column 5)
- *  xx011 => 00111  (even row, column 7)
- *  xx100 => 00000  ( odd row, column 0)
- *  xx101 => 00010  ( odd row, column 2)
- *  xx110 => 00100  ( odd row, column 4)
- *  xx111 => 00110  ( odd row, column 6) */
+/*!
+ * \brief
+ * Gets the board column from a dark square index
+ *
+ * Use the three least significant bits, rotate them to the left and flip the
+ * least significant bit, so that \f$[b_4, b_3, b_2, b_1, b_0]\f$ becomes
+ * \f$[0, 0, b_1, b_0, !b_2]\f$, or in other words
+ * (given that rows and columns are both in the range `0..7`) map
+ *
+ * From (square id) | To (column id) | Row  | Column
+ * ---------------- | -------------- | ---: | ------
+ * xx000            | 00001          | even | 1
+ * xx001            | 00011          | even | 3
+ * xx010            | 00101          | even | 5
+ * xx011            | 00111          | even | 7
+ * xx100            | 00000          |  odd | 0
+ * xx101            | 00010          |  odd | 2
+ * xx110            | 00100          |  odd | 4
+ * xx111            | 00110          |  odd | 6
+ */
 #define BOARD_COL(i) ((((i)&3)<<1) | (((i)&4)==0))
 
 /* -- macros meant to make the code easier to read */
-/* floating point arithmetic isn't commutative, so to allow the compiler to
-   pre-calculate constants if we're planning to draw off-center, SQ_CENTER
-   should be placed together with the other constant _within parentheses_ */
+/*!
+ * \brief
+ * Offset to reach the center of a square on the board
+ *
+ * \attention
+ * Floating point arithmetic isn't commutative, so to allow the compiler to
+ * pre-calculate constants if you're planning to draw off-center, #SQ_CENTER
+ * should be placed together with the other constant _within parentheses_.
+ */
 #define SQ_CENTER .5
 
-/* CENTER is to be used iff we're not adding another constant afterwards */
+/*!
+ * \brief
+ * Converts a coordinate from a square corner to a square center
+ *
+ * \note
+ * #CENTER(x) is to be used iff you want to refer to the exact center of a
+ * square, and not combine it with another constant. Otherwise, you should use
+ * #SQ_CENTER to allow the compiler to pre-calculate the constants.
+ */
 #define CENTER(x) ((x)+SQ_CENTER)
 
-/*
- * Function: draw_pieces
- * ---------------------
+/*!
+ * \brief
  * Draws piece circles, but doesn't fill or stroke.
  *
- * cr:     a Cairo context
- * board:  a string where each character represents a dark square, and
- *         where a lowercase/uppercase letter represents a man/king
- * player: uppercase 'R' (red), 'W' (white) or 'X' (removed)
+ * \param[in] cr     a Cairo context
+ * \param[in]        board a string where each character represents a dark
+ *                   square, and where a lowercase/uppercase letter represents
+ *                   a man/king
+ * \param[in] player uppercase \c R (red), \c W (white) or \c X (removed)
  */
 static void
 draw_pieces(cairo_t * const cr, const gchar * const board, const gchar player)
@@ -107,14 +135,13 @@ draw_pieces(cairo_t * const cr, const gchar * const board, const gchar player)
   }
 }
 
-/*
- * Function: draw_king_markers
- * ---------------------------
+/*!
+ * \brief
  * Draws markers on pieces which are kings, but doesn't stroke.
  *
- * cr:     a Cairo context
- * board:  a string where each character represents a dark square, and
- *         where uppercase letters represents kings
+ * \param[in] cr    a Cairo context
+ * \param[in] board a string where each character represents a dark square,
+ *                  and where uppercase letters represent kings
  */
 static void
 draw_king_markers(cairo_t * const cr, const gchar * const board)
@@ -137,14 +164,14 @@ draw_king_markers(cairo_t * const cr, const gchar * const board)
   }
 }
 
-/*
- * Function: draw_moves
- * --------------------
+/*!
+ * \brief
  * Draws a line along the path of a move or jump, but doesn't stroke.
  *
- * cr:     a Cairo context
- * moves:  a singly-linked list of dark squares (range 0..31) involved in a
- *         sequence of movements (may also be empty or contain one element)
+ * \param[in] cr    a Cairo context
+ * \param[in] moves a singly-linked list of dark squares (range `0..31`)
+ *                  involved in a sequence of movements (may be empty or
+ *                  contain one element, but that causes nothing to be drawn)
  */
 static void
 draw_moves(cairo_t * const cr, const GSList * const moves)
@@ -170,26 +197,7 @@ draw_moves(cairo_t * const cr, const GSList * const moves)
   }
 }
 
-/*
- * Function: draw_board
- * --------------------
- * Draws the board with squares, numbers, moves and pieces (men and kings)
- * including removed pieces.
- *
- * cr:        the Cairo context to draw on
- * width_px:  the width of the widget in pixels
- * height_px: the height of the widget in pixels
- * board:     a string where the first 32 characters represent the content of
- *            the dark squares, according to the following list (or NULL)
- *              * 'r' - red man
- *              * 'R' - red king
- *              * 'w' - white man
- *              * 'W' - white king
- *              * 'x' - recently removed piece
- *              * '.' - empty square
- * moves:     a singly-linked list with a sequence of moves between the dark
- *            squares (range 0..31) in order (or NULL)
- */
+/* documented in board.h */
 void
 draw_board(cairo_t      * const cr,
            const int            width_px,

@@ -1,4 +1,12 @@
+/*!
+ * \file main.c
+ * \brief
+ * Parses the command line, prints help if necessary, sets up GTK+ and starts
+ * the main event loop.
+ */
+/*! \cond */
 #define _POSIX_C_SOURCE 2
+/*! \endcond */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +17,7 @@
 #include "gui.h"
 
 /* splitting the usage string to avoid a 509 byte limitation in C90 */
+/*! \brief Top level usage string */
 static const gchar *usage =
   "Usage: %s [OPTION]...\n"
   "Visualizer for the Checkers homework assignment of the fall of 2014\n"
@@ -18,6 +27,7 @@ static const gchar *usage =
   "Copyright (c) 2014 Anders Sj\xc3\xb6qvist <%s>\n"
   "Published under the MIT License.\n";
 
+/*! \brief Execution control part of the usage information */
 static const gchar *usage_execution =
   "Execution control:\n"
   "  -1 CMD   use CMD as the command line for player 1 (default \"\")\n"
@@ -29,6 +39,7 @@ static const gchar *usage_execution =
   "  -t NUM   set the animation timer to NUM msec (default 1000)\n"
   "\n";
 
+/*! \brief Window control part of the usage information */
 static const gchar *usage_window =
   "Window control:\n"
   "  -f FONT  use FONT for the output buffers (default \"monospace 8\")\n"
@@ -38,25 +49,54 @@ static const gchar *usage_window =
   "  -y NUM   set the window height to NUM px (default 650)\n"
   "\n";
 
+/*! \brief Miscellaneous part of the usage information */
 static const gchar *usage_misc =
   "Miscellaneous:\n"
   "  -h       display this help text and exit\n"
   "\n";
 
-/* I hope this is sufficient to fool harvesters */
+/*! \brief Author's obfuscated e-mail address to fool harvesters */
 static gchar obfuscated_email[] = "KCTVDJ|L(*9='\x7f'#";
 
+/*! \brief Initial strings for the command lines */
 gchar   *option_cmds[NUM_CLIENTS] = { "", "" };
+/*! \brief Initial state of the Animate button */
 gboolean option_animate           = TRUE;
+/*!
+ * \brief
+ * If set to \c TRUE, a Run button click is made automatically after the
+ * program starts
+ */
 gboolean option_run               = FALSE;
+/*! \brief Time spent on each animation step in milliseconds */
 guint    option_timeout_ms        = 1000;
 
+/*! \brief Font for the output buffer textviews */
 gchar   *option_font              = "monospace 8";
+/*! \brief If set to \c TRUE, initially maximize the window */
 gboolean option_maximize          = FALSE;
+/*!
+ * \brief
+ * If set to \c TRUE, quit the program after the animation reaches the end
+ */
 gboolean option_quit              = FALSE;
+/*! \brief Initial window width in pixels */
 gint     option_width_px          = 600;
+/*! \brief Initial window height in pixels */
 gint     option_height_px         = 650;
 
+/*!
+ * \brief
+ * Parses the command line options and updates global variables
+ *
+ * \param[in]  argc         the number of options
+ * \param[in]  argv         an array of options
+ * \param[out] display_help set to \c TRUE if the caller should display the
+ *                          help section (the pointer must not be \c NULL and
+ *                          the variable must be initialized to \c FALSE)
+ * \return whether the options were successfully read (i.e. whether their
+ *         syntax was correct)
+ */
 static gboolean
 parse_options(const int        argc,
               char * const    *argv,
@@ -116,6 +156,10 @@ parse_options(const int        argc,
   return TRUE;
 }
 
+/*!
+ * \brief
+ * Program entry point.
+ */
 int
 main(int argc, char **argv)
 {

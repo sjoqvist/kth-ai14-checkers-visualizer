@@ -1,3 +1,8 @@
+/*!
+ * \file gui.c
+ * \brief
+ * Creates the layout and connects the widgets
+ */
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,55 +12,127 @@
 #include "board.h"
 #include "clients.h"
 
+/*!
+ * \brief
+ * Border spacing around most widgets
+ */
 #define BORDER 3
 
 static gboolean
 animation_timeout_callback(gpointer user_data);
 
+/*!
+ * \brief
+ * Enumeration of GtkListStore columns
+ */
 enum {
-  PLAYER_COLUMN,
-  DESC_COLUMN,
-  BOARD_COLUMN,
-  MOVES_COLUMN,
-  IS_CLIENT0_COLUMN,
-  STDOUT_COLUMN,
-  N_COLUMNS
+  PLAYER_COLUMN,     /*!< player information to display to the user */
+  DESC_COLUMN,       /*!< description of the move to display to the user */
+  BOARD_COLUMN,      /*!< string representing the board setup */
+  MOVES_COLUMN,      /*!< list of moves/jumps leading to the current setup */
+  IS_CLIENT0_COLUMN, /*!< \c TRUE if the client ID is 0, \c FALSE otherwise */
+  STDOUT_COLUMN,     /*!< buffer to store stdout data for the current move */
+  N_COLUMNS          /*!< number of columns (end of enum) */
 };
 
-/* this string must be freed before it's overwritten */
+/*!
+ * \brief
+ * String representation of the current board setup
+ *
+ * \attention
+ * Must be freed before it's overwritten
+
+ * \sa draw_board
+ */
 static gchar  *str_board  = NULL;
-/* this list should not be freed, as it's only a snapshot from the store */
+/*!
+ * \brief
+ * Singly-linked list of moves leading to the current board setup
+ *
+ * \attention
+ * Should not be freed, as it's only a snapshot from the store
+ */
 static GSList *list_moves = NULL;
 
+/*! \brief GtkDrawingArea where the graphical board representation is drawn */
 static GtkWidget *drawing_area;
+/*! \brief GtkButton that starts or kills the children */
 static GtkWidget *btn_run_kill;
+/*! \brief GtkToggleButton that controls animation */
 static GtkWidget *btn_animate;
+/*!
+ * \brief
+ * GtkStatusbar that provides information primarily about the children
+ */
 static GtkWidget *statusbar;
+/*! \brief Context ID to use when updating the statusbar */
 static guint statusbar_context_id;
+/*!
+ * \brief
+ * Event source for the timeout event
+ *
+ * Set to zero when no timeout source is active, and non-zero otherwise.
+ */
 static guint source_timeout = 0;
+/*!
+ * \brief
+ * Indicates whether a timeout event has been triggered without any data to be
+ * displayed
+ *
+ * If set to \c TRUE, new data should be displayed as soon as it becomes
+ * available, and a new timeout event should be added to continue the
+ * animation.
+ */
 static gboolean is_animation_stalled = FALSE;
+/*! \brief GtkWindow for the main program window */
 static GtkWidget *window;
+/*! \brief Array of GtkEntry for the client command lines */
 static GtkWidget *entry_cmds[NUM_CLIENTS];
+/*! \brief GtkTreeView with the list of board setups and moves */
 static GtkWidget *list;
+/*! \brief Array of GtkTextView for each of the clients and output types */
 static GtkWidget *textviews[NUM_CHANNELS];
+/*! \brief Buffers belonging to ::textviews */
 static GtkTextBuffer *buffers[NUM_CHANNELS];
+/*! \brief Indicates whether any of the clients is currently running */
 static gboolean is_running = FALSE;
 
-/* get the name of the starting textmark - result must be freed */
+/*!
+ * \brief
+ * Gets the name of the starting textmark
+ *
+ * \param[in] row  the number of the row to generate the string for
+ *
+ * \return
+ * the name of the starting textmark in a string that should be freed by the
+ * caller
+ */
 static gchar *
 get_mark_name_begin(gint row)
 {
   return g_strdup_printf("begin_%04d", row);
 }
 
-/* get the name of the ending textmark - result must be freed */
+/*!
+ * \brief
+ * Gets the name of the ending textmark
+ *
+ * \param[in] row  the number of the row to generate the string for
+ *
+ * \return
+ * the name of the ending textmark in a string that should be freed by the
+ * caller
+ */
 static gchar *
 get_mark_name_end(gint row)
 {
   return g_strdup_printf("end_%04d", row);
 }
 
-/* start or restart animation */
+/*!
+ * \brief
+ * Starts or restarts animation
+ */
 static void
 start_animation_timeout(void)
 {
@@ -65,7 +142,20 @@ start_animation_timeout(void)
   is_animation_stalled = FALSE;
 }
 
-/* parse the line that the client writes to stdin */
+/*!
+ * \brief
+ * Parses the line that the client wrote to standard output
+ *
+ * \param[in]  move_line    the string to be parsed
+ * \param[out] board        the board setup described by the input
+ * \param[out] moves        the set of moves or jumps described by the input
+ * \param[out] description  a description of the move to display to the user
+ * \param[out] player       a string describing which player made the move, or
+ *                          \c NULL if it's a special move
+ *
+ * \return
+ * whether the line was successfully parsed
+ */
 static gboolean
 parse_client_stdout(gchar   *move_line,
                     gchar  **board,
@@ -200,7 +290,7 @@ parse_client_stdout(gchar   *move_line,
   return TRUE;
 }
 
-/* add incoming text to a buffer, and save it in the store */
+/* documented in gui.h */
 void
 append_text(const gchar *text, gsize len, guint8 channel_id)
 {
@@ -319,12 +409,26 @@ append_text(const gchar *text, gsize len, guint8 channel_id)
   g_free(stdout_column);
 }
 
-/* called for each linked list of moves to release the resource */
+/*!
+ * \brief
+ * Releases the linked list of moves, stored in a datastore entry
+ *
+ * Should be called for each entry in the store. The function follows the
+ * signature of \c GtkTreeModelForeachFunc.
+ *
+ * \param[in] model      the \c GtkTreeModel that is being iterated
+ * \param[in] path       not used
+ * \param[in] iter       the current \c GtkTreeIter
+ * \param[in] user_data  not used
+ *
+ * \return
+ * \c FALSE (to continue iterating)
+ */
 static gboolean
 free_move(GtkTreeModel *model,
-          GtkTreePath *path,
-          GtkTreeIter *iter,
-          gpointer user_data)
+          GtkTreePath  *path,
+          GtkTreeIter  *iter,
+          gpointer      user_data)
 {
   GSList *moves_column;
 
@@ -338,7 +442,10 @@ free_move(GtkTreeModel *model,
   return FALSE;
 }
 
-/* release and clear information in the store */
+/*!
+ * \brief
+ * Releases and clears information in the store
+ */
 static void
 release_resources(void)
 {
@@ -353,7 +460,10 @@ release_resources(void)
   gtk_list_store_clear(store);
 }
 
-/* create new buffers for the textviews */
+/*!
+ * \brief
+ * Creates new buffers for the textviews
+ */
 static void
 wipe_buffers(void)
 {
@@ -368,7 +478,17 @@ wipe_buffers(void)
   }
 }
 
-/* get a string describing the state of the client */
+/*!
+ * \brief
+ * Gets a string describing the state of the client
+ *
+ * \param[in] n      a zero-based numbering of the client
+ * \param[in] client the \ref client_t object to examine for state information
+ *
+ * \return
+ * a string description of the current state, that should be freed by the
+ * caller when it's not needed anymore
+ */
 static gchar *
 get_client_description(guint16 n, const client_t * const client)
 {
@@ -383,7 +503,7 @@ get_client_description(guint16 n, const client_t * const client)
   }
 }
 
-/* update the statusbar after a child process has spawned or exited */
+/* documented in gui.h */
 void
 update_status(const client_t clients[NUM_CLIENTS])
 {
@@ -415,11 +535,21 @@ update_status(const client_t clients[NUM_CLIENTS])
   }
 }
 
-/* callback for when the drawing area needs to be redrawn */
+/*!
+ * \brief
+ * Callback for when the drawing area needs to be redrawn
+ *
+ * \param[in] widget     the widget that received the signal
+ * \param[in] event      not used
+ * \param[in] user_data  not used
+ *
+ * \return
+ * \c TRUE (to stop other handlers from being invoked for the event)
+ */
 static gboolean
-expose_event_callback(GtkWidget *widget,
+expose_event_callback(GtkWidget      *widget,
                       GdkEventExpose *event,
-                      gpointer user_data)
+                      gpointer        user_data)
 {
   cairo_t *cr;
 
@@ -433,11 +563,18 @@ expose_event_callback(GtkWidget *widget,
   return TRUE;
 }
 
-/* callback for when the drawing area is about to get resized */
+/*!
+ * \brief
+ * Callback for when the drawing area is about to get resized
+ *
+ * \param[in] widget      the widget that received the signal
+ * \param[in] allocation  the widget's allocated region
+ * \param[in] user_data   not used
+ */
 static void
-size_allocate_callback(GtkWidget *widget,
+size_allocate_callback(GtkWidget     *widget,
                        GtkAllocation *allocation,
-                       gpointer user_data)
+                       gpointer       user_data)
 {
   UNUSED(user_data);
 
@@ -445,7 +582,7 @@ size_allocate_callback(GtkWidget *widget,
   gtk_widget_set_size_request(widget, allocation->height, -1);
 }
 
-/* display an error dialog box */
+/* documented in gui.h */
 void
 print_error(gchar *message)
 {
@@ -459,6 +596,16 @@ print_error(gchar *message)
   gtk_widget_destroy(dialog);
 }
 
+/*!
+ * \brief
+ * Callback for when the animation timed out and it's time to change the
+ * selected row
+ *
+ * \param[in] user_data  not used
+ *
+ * \return
+ * \c FALSE (to remove the source)
+ */
 static gboolean
 animation_timeout_callback(gpointer user_data)
 {
@@ -500,7 +647,13 @@ animation_timeout_callback(gpointer user_data)
   return FALSE;
 }
 
-/* 'clicked' callback for the button that says either 'Run' or 'Kill' */
+/*!
+ * \brief
+ * \c 'clicked' callback for the button that says either 'Run' or 'Kill'
+ *
+ * \param[in] widget     not used
+ * \param[in] user_data  not used
+ */
 static void
 run_kill_clicked_callback(GtkWidget *widget, gpointer user_data)
 {
@@ -528,6 +681,13 @@ run_kill_clicked_callback(GtkWidget *widget, gpointer user_data)
   }
 }
 
+/*!
+ * \brief
+ * Callback for when the 'Animate' button is clicked
+ *
+ * \param[in] button     the button that received the signal
+ * \param[in] user_data  not used
+ */
 static void
 animate_toggled_callback(GtkToggleButton *button, gpointer user_data)
 {
@@ -543,7 +703,17 @@ animate_toggled_callback(GtkToggleButton *button, gpointer user_data)
   }
 }
 
-/* get board appearance from the store, to display in the drawing area */
+/*!
+ * \brief
+ * Gets board appearance from the store, to display in the drawing area
+ *
+ * \param[in] model  the store from which to read
+ * \param[in] iter   an iterator to the current store entry
+ *
+ * \pre
+ * ::str_board and ::list_moves must be freed and set to \c NULL prior to
+ * calling this function, to avoid memory leaks
+ */
 static void
 load_board_and_moves(GtkTreeModel *model, GtkTreeIter iter)
 {
@@ -562,7 +732,12 @@ load_board_and_moves(GtkTreeModel *model, GtkTreeIter iter)
   }
 }
 
-/* highlight text in the relevant text buffers */
+/*!
+ * \brief
+ * Highlights text in the relevant text buffers
+ *
+ * \param[in] path  the path to the list row that has been selected
+ */
 static void
 highlight_text(GtkTreePath *path)
 {
@@ -603,7 +778,13 @@ highlight_text(GtkTreePath *path)
   g_free(mark_name_end);
 }
 
-/* callback for when a row is selected in the tree view */
+/*!
+ * \brief
+ * Callback for when a row is selected in the tree view
+ *
+ * \param[in] widget     the widget that received the signal
+ * \param[in] user_data  not used
+ */
 static void
 cursor_changed(GtkWidget *widget, gpointer user_data)
 {
@@ -646,12 +827,21 @@ cursor_changed(GtkWidget *widget, gpointer user_data)
   }
 }
 
-/* data was changed in the store (might affect what's currently displayed) */
+/*!
+ * \brief
+ * Callback for when data was changed in the store, as it might affect what's
+ * currently displayed
+ *
+ * \param[in]  model      the model on which the signal was emitted
+ * \param[in]  path       a path identifying the changed row
+ * \param[in]  iter       an iterator pointing to the changed row
+ * \param[out] user_data  not used
+ */
 static void
 row_changed_callback(GtkTreeModel *model,
-                     GtkTreePath *path,
-                     GtkTreeIter *iter,
-                     gpointer user_data)
+                     GtkTreePath  *path,
+                     GtkTreeIter  *iter,
+                     gpointer      user_data)
 {
   GtkTreeSelection *selection;
 
@@ -668,12 +858,21 @@ row_changed_callback(GtkTreeModel *model,
   }
 }
 
-/* data was inserted into the store (might cause us to select another row ) */
+/*!
+ * \brief
+ * Callback for when data was inserted into the store, as it might cause us to
+ * select another row
+ *
+ * \param[in]  model      not used
+ * \param[in]  path       a path identifying the new row
+ * \param[in]  iter       not used
+ * \param[out] user_data  not used
+ */
 static void
 row_inserted_callback(GtkTreeModel *model,
-                      GtkTreePath *path,
-                      GtkTreeIter *iter,
-                      gpointer user_data)
+                      GtkTreePath  *path,
+                      GtkTreeIter  *iter,
+                      gpointer      user_data)
 {
   GtkTreeSelection *selection;
 
@@ -691,7 +890,15 @@ row_inserted_callback(GtkTreeModel *model,
   gtk_tree_view_set_cursor(GTK_TREE_VIEW(list), path, NULL, FALSE);
 }
 
-/* clean up before the program terminates, to avoid orphan processes */
+/*!
+ * \brief
+ * Callback for when the main window is about to be destroyed
+ *
+ * Cleans up before the program terminates, to avoid orphan processes.
+ *
+ * \param[in] object     not used
+ * \param[in] user_data  not used
+ */
 static void
 window_destroy_callback(GtkObject *object,
                         gpointer   user_data)
@@ -708,10 +915,20 @@ window_destroy_callback(GtkObject *object,
   gtk_main_quit();
 }
 
-/* build a single stream output text view and its label */
+/*!
+ * \brief
+ * Builds a single stream output text view and its label
+ *
+ * \param[in]  name      the label to place above the text view
+ * \param[out] textview  the generated GtkTextView
+ * \param[out] buffer    the buffer belonging to the text view widget
+ *
+ * \return
+ * a widget wrapping everything, to be added to the layout by the caller
+ */
 static GtkWidget *
-create_player_buffer(const gchar *name,
-                     GtkWidget **textview,
+create_player_buffer(const gchar    *name,
+                     GtkWidget     **textview,
                      GtkTextBuffer **buffer)
 {
   GtkWidget *box;
@@ -741,7 +958,15 @@ create_player_buffer(const gchar *name,
   return box;
 }
 
-/* create a panel for one player, with stdout, stderr and command line */
+/*!
+ * \brief
+ * Creates a panel for one player, with stdout, stderr and command line
+ *
+ * \param[in] id  a zero-based client ID
+ *
+ * \return
+ * a widget wrapping everything, to be added to the layout by the caller
+ */
 static GtkWidget *
 create_player_panel(guint8 id)
 {
@@ -786,7 +1011,7 @@ create_player_panel(guint8 id)
   return frame_outer;
 }
 
-/* master function to build the GUI */
+/* documented in gui.h */
 void
 create_window_with_widgets(void)
 {
