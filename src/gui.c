@@ -787,7 +787,7 @@ highlight_text(GtkTreePath *path)
  * \param[in] user_data  not used
  */
 static void
-cursor_changed(GtkWidget *widget, gpointer user_data)
+cursor_changed_callback(GtkWidget *widget, gpointer user_data)
 {
   GtkTreeSelection *selection;
   GList *rows;
@@ -1072,7 +1072,7 @@ create_window_with_widgets(void)
     g_object_unref(store);
 
     g_signal_connect(list, "cursor-changed",
-                     G_CALLBACK(cursor_changed), NULL);
+                     G_CALLBACK(cursor_changed_callback), NULL);
   }
 
   /* build outmost wrapper to contain the GtkPaned and GtkStatusbar */
