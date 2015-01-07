@@ -138,7 +138,8 @@ start_animation_timeout(void)
 {
   extern guint option_timeout_ms;
   source_timeout = g_timeout_add(option_timeout_ms,
-                                 animation_timeout_callback, NULL);
+                                 (GSourceFunc)animation_timeout_callback,
+                                 NULL);
   is_animation_stalled = FALSE;
 }
 
