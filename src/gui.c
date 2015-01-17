@@ -427,10 +427,10 @@ append_text(const gchar *text, gsize len, guint8 channel_id)
  * \c FALSE (to continue iterating)
  */
 static gboolean
-free_move(GtkTreeModel *model,
-          GtkTreePath  *path,
-          GtkTreeIter  *iter,
-          gpointer      user_data)
+free_move_callback(GtkTreeModel *model,
+                   GtkTreePath  *path,
+                   GtkTreeIter  *iter,
+                   gpointer      user_data)
 {
   GSList *moves_column;
 
@@ -458,7 +458,9 @@ release_resources(void)
   list_moves = NULL;
 
   store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(list)));
-  gtk_tree_model_foreach(GTK_TREE_MODEL(store), free_move, NULL);
+  gtk_tree_model_foreach(GTK_TREE_MODEL(store),
+                         (GtkTreeModelForeachFunc)free_move_callback,
+                         NULL);
   gtk_list_store_clear(store);
 }
 
