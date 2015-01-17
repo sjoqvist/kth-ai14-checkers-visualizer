@@ -178,7 +178,9 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
         kill_clients();
         return;
       }
-      g_child_watch_add(clients[i].pid, child_exit_callback, &clients[i]);
+      g_child_watch_add(clients[i].pid,
+                        (GChildWatchFunc)child_exit_callback,
+                        &clients[i]);
       clients[i].is_running = TRUE;
     }
   }
@@ -202,7 +204,7 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
       g_io_channel_set_flags(channel, G_IO_FLAG_NONBLOCK, NULL);
       g_io_channel_set_encoding(channel, charset, NULL);
       g_io_add_watch(channel, G_IO_IN | G_IO_ERR | G_IO_HUP | G_IO_NVAL,
-                     io_watch_callback, GINT_TO_POINTER(i));
+                     (GIOFunc)io_watch_callback, GINT_TO_POINTER(i));
       g_io_channel_unref(channel);
     }
   }
