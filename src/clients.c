@@ -57,8 +57,9 @@ stop_channels(GIOChannel *channel_in, GIOChannel *channel_out)
  *
  * \param[in] source     the event source
  * \param[in] condition  the condition which has been satisfied
- * \param[in] data       an integer as specified by #CHANNEL_ID, converted to
- *                       a \c gpointer using \c GINT_TO_POINTER()
+ * \param[in] data       an unsigned integer as specified by #CHANNEL_ID,
+ *                       converted to a \c gpointer using
+ *                       \c GUINT_TO_POINTER()
  *
  * \return
  * \c FALSE when the event source should be removed, otherwise \c TRUE
@@ -66,7 +67,7 @@ stop_channels(GIOChannel *channel_in, GIOChannel *channel_out)
 static gboolean
 io_watch_callback(GIOChannel *source, GIOCondition condition, gpointer data)
 {
-  const gint input_type = GPOINTER_TO_INT(data);
+  const guint8 input_type = GPOINTER_TO_UINT(data);
   gchar buffer[BUFFER_SIZE];
   gsize bytes_read;
   GError *error = NULL;
@@ -204,7 +205,7 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
       g_io_channel_set_flags(channel, G_IO_FLAG_NONBLOCK, NULL);
       g_io_channel_set_encoding(channel, charset, NULL);
       g_io_add_watch(channel, G_IO_IN | G_IO_ERR | G_IO_HUP | G_IO_NVAL,
-                     (GIOFunc)io_watch_callback, GINT_TO_POINTER(i));
+                     (GIOFunc)io_watch_callback, GUINT_TO_POINTER(i));
       g_io_channel_unref(channel);
     }
   }

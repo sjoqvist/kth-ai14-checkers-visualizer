@@ -248,7 +248,8 @@ parse_client_stdout(gchar   *move_line,
           g_strfreev(split_line);
           return FALSE;
         }
-        *moves = g_slist_prepend(*moves, GINT_TO_POINTER(sq - 1));
+        assert(sq > 0);
+        *moves = g_slist_prepend(*moves, GUINT_TO_POINTER((guint)sq - 1));
       }
     }
     g_strfreev(strv_moves);
@@ -261,21 +262,21 @@ parse_client_stdout(gchar   *move_line,
   {
     GSList *move = *moves;
     /* moves are written "A-B", and jumps "AxB", "AxBxC", ... */
-    const gchar * const append_string = (action == 0) ? "-%d" : "x%d";
+    const gchar * const append_string = (action == 0) ? "-%u" : "x%u";
 
     /* a reasonable starting length is the length of the input string */
     GString *desc = g_string_sized_new(strlen(split_line[1]));
-    int old;
+    guint old;
 
     /* there should be at least two squares in the list */
     assert(move != NULL);
-    old = GPOINTER_TO_INT(move->data);
+    old = GPOINTER_TO_UINT(move->data);
 
     /* write the first value, without leading "-" or "x" */
-    g_string_append_printf(desc, "%d", old + 1);
+    g_string_append_printf(desc, "%u", old + 1);
 
     while ((move = g_slist_next(move)) != NULL) {
-      const int new = GPOINTER_TO_INT(move->data);
+      const guint new = GPOINTER_TO_UINT(move->data);
       g_string_append_printf(desc, append_string, new + 1);
 
       /* figure out which square we're jumping over, and mark it "x" */

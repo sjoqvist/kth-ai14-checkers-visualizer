@@ -181,7 +181,7 @@ draw_moves(cairo_t * const cr, const GSList * const moves)
   assert(cr != NULL);
 
   while (move != NULL) {
-    const guint8 sq = GPOINTER_TO_INT(move->data);
+    const guint8 sq = GPOINTER_TO_UINT(move->data);
     const guint8 y  = BOARD_ROW(sq);
     const guint8 x  = BOARD_COL(sq);
 
