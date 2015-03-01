@@ -159,7 +159,7 @@ If your version of `make` doesn't support the fancy syntax in
 
 ```
 mkdir build
-c89 -o build/visualizer src/*.c -O2 `pkg-config --cflags --libs gtk+-2.0`
+c99 -o build/visualizer src/*.c -O2 `pkg-config --cflags --libs gtk+-2.0`
 ```
 
 Running
@@ -195,7 +195,7 @@ will be sent literally to the child process.
 
 Portability
 -----------
-The code is written in ANSI C (C89), with the exception of the POSIX
+The code is written in standard C (C99), with the exception of the POSIX
 extensions `kill(2)` and `getopt(3)`. It requires GTK+ version 2 with
 header files. In theory, it should run on a bunch of other operating
 systems as well, apart from the ones listed above. Let me know if you

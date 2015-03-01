@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Wextra -pedantic -std=c89
+CFLAGS=-Wall -Wextra -pedantic -std=c99
 DEBUGFLAGS=-O0 -g
 NDEBUGFLAGS=-O2 -DNDEBUG
 GTKFLAGS=`pkg-config --cflags gtk+-2.0`
