@@ -116,14 +116,12 @@
 static void
 draw_pieces(cairo_t * const cr, const gchar * const board, const gchar player)
 {
-  guint8 i;
-
   assert(cr != NULL);
   assert(board != NULL);
   assert(strlen(board) == NUM_DARK_SQ);
   assert(player == 'R' || player == 'W' || player == 'X');
 
-  for (i=0; i<NUM_DARK_SQ; ++i) {
+  for (guint8 i=0; i<NUM_DARK_SQ; ++i) {
     /* 'A'-'Z' are in ASCII range 0x41-0x5a and 'a'-'z' in range 0x61-0x7a
        hence, we can check for either by masking out 0x20 */
     if ((board[i] & ~0x20) == player) {
@@ -146,13 +144,11 @@ draw_pieces(cairo_t * const cr, const gchar * const board, const gchar player)
 static void
 draw_king_markers(cairo_t * const cr, const gchar * const board)
 {
-  guint8 i;
-
   assert(cr != NULL);
   assert(board != NULL);
   assert(strlen(board) == NUM_DARK_SQ);
 
-  for (i=0; i<NUM_DARK_SQ; ++i) {
+  for (guint8 i=0; i<NUM_DARK_SQ; ++i) {
     if (board[i] >= 'A' && board[i] <= 'Z') {
       const guint8 x = BOARD_COL(i);
       const guint8 y = BOARD_ROW(i);
@@ -218,11 +214,8 @@ draw_board(cairo_t      * const cr,
   cairo_fill(cr);
 
   /* draw dark squares */
-  {
-    guint8 i;
-    for (i=0; i<NUM_DARK_SQ; ++i) {
-      cairo_rectangle(cr, BOARD_COL(i), BOARD_ROW(i), 1., 1.);
-    }
+  for (guint8 i=0; i<NUM_DARK_SQ; ++i) {
+    cairo_rectangle(cr, BOARD_COL(i), BOARD_ROW(i), 1., 1.);
   }
   cairo_set_source_rgb(cr, DARK_SQ_R, DARK_SQ_G, DARK_SQ_B);
   cairo_fill(cr);
@@ -236,8 +229,7 @@ draw_board(cairo_t      * const cr,
         "9",  "10", "11", "12", "13", "14", "15", "16",
         "17", "18", "19", "20", "21", "22", "23", "24",
         "25", "26", "27", "28", "29", "30", "31", "32" };
-    guint8 i;
-    for (i=0; i<NUM_DARK_SQ; ++i) {
+    for (guint8 i=0; i<NUM_DARK_SQ; ++i) {
       cairo_move_to(cr, BOARD_COL(i), BOARD_ROW(i)+1);
       cairo_show_text(cr, square_num[i]);
     }

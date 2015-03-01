@@ -140,74 +140,65 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
 
   assert(error == NULL || *error == NULL);
 
-  {
-    guint8 i;
-    for (i = 0; i < NUM_CLIENTS; ++i) {
-      gchar **cmdline;
-      gboolean success;
+  for (guint8 i = 0; i < NUM_CLIENTS; ++i) {
+    gchar **cmdline;
+    gboolean success;
 
-      assert(cmds[i] != NULL);
+    assert(cmds[i] != NULL);
 
-      cmdline = g_strsplit(cmds[i], " ", 0);
-      success =
-        g_spawn_async_with_pipes(/* const gchar *working_directory */
-                                 NULL,
-                                 /* gchar **argv */
-                                 cmdline,
-                                 /* gchar **envp */
-                                 NULL,
-                                 /* GSpawnFlags flags */
-                                 G_SPAWN_SEARCH_PATH |
-                                 G_SPAWN_DO_NOT_REAP_CHILD,
-                                 /* GSpawnChildSetupFunc child_setup */
-                                 NULL,
-                                 /* gpointer user_data */
-                                 NULL,
-                                 /* GPid *child_pid */
-                                 &clients[i].pid,
-                                 /* gint *standard_input */
-                                 &fd_stdin[i],
-                                 /* gint *standard_output */
-                                 &fd_stdouterr[CHANNEL_ID(i, STDOUT)],
-                                 /* gint *standard_error */
-                                 &fd_stdouterr[CHANNEL_ID(i, STDERR)],
-                                 /* GError **error */
-                                 error);
-      g_strfreev(cmdline);
-      if (!success) {
-        /* don't keep one client running if the other one couldn't start */
-        kill_clients();
-        return;
-      }
-      g_child_watch_add(clients[i].pid,
-                        (GChildWatchFunc)child_exit_callback,
-                        &clients[i]);
-      clients[i].is_running = TRUE;
+    cmdline = g_strsplit(cmds[i], " ", 0);
+    success =
+      g_spawn_async_with_pipes(/* const gchar *working_directory */
+                               NULL,
+                               /* gchar **argv */
+                               cmdline,
+                               /* gchar **envp */
+                               NULL,
+                               /* GSpawnFlags flags */
+                               G_SPAWN_SEARCH_PATH |
+                               G_SPAWN_DO_NOT_REAP_CHILD,
+                               /* GSpawnChildSetupFunc child_setup */
+                               NULL,
+                               /* gpointer user_data */
+                               NULL,
+                               /* GPid *child_pid */
+                               &clients[i].pid,
+                               /* gint *standard_input */
+                               &fd_stdin[i],
+                               /* gint *standard_output */
+                               &fd_stdouterr[CHANNEL_ID(i, STDOUT)],
+                               /* gint *standard_error */
+                               &fd_stdouterr[CHANNEL_ID(i, STDERR)],
+                               /* GError **error */
+                               error);
+    g_strfreev(cmdline);
+    if (!success) {
+      /* don't keep one client running if the other one couldn't start */
+      kill_clients();
+      return;
     }
+    g_child_watch_add(clients[i].pid,
+                      (GChildWatchFunc)child_exit_callback,
+                      &clients[i]);
+    clients[i].is_running = TRUE;
   }
 
   g_get_charset(&charset);
 
   /* open two channels for writing */
-  {
-    guint8 i;
-    for (i = 0; i < NUM_CLIENTS; ++i) {
-      channel_stdin[i] = g_io_channel_unix_new(fd_stdin[i]);
-      g_io_channel_set_encoding(channel_stdin[i], charset, NULL);
-    }
+  for (guint8 i = 0; i < NUM_CLIENTS; ++i) {
+    channel_stdin[i] = g_io_channel_unix_new(fd_stdin[i]);
+    g_io_channel_set_encoding(channel_stdin[i], charset, NULL);
   }
   /* open four channels for reading, and start watching them */
-  {
-    guint8 i;
-    for (i = 0; i < NUM_CHANNELS; ++i) {
-      GIOChannel *channel;
-      channel = g_io_channel_unix_new(fd_stdouterr[i]);
-      g_io_channel_set_flags(channel, G_IO_FLAG_NONBLOCK, NULL);
-      g_io_channel_set_encoding(channel, charset, NULL);
-      g_io_add_watch(channel, G_IO_IN | G_IO_ERR | G_IO_HUP | G_IO_NVAL,
-                     (GIOFunc)io_watch_callback, GUINT_TO_POINTER(i));
-      g_io_channel_unref(channel);
-    }
+  for (guint8 i = 0; i < NUM_CHANNELS; ++i) {
+    GIOChannel *channel;
+    channel = g_io_channel_unix_new(fd_stdouterr[i]);
+    g_io_channel_set_flags(channel, G_IO_FLAG_NONBLOCK, NULL);
+    g_io_channel_set_encoding(channel, charset, NULL);
+    g_io_add_watch(channel, G_IO_IN | G_IO_ERR | G_IO_HUP | G_IO_NVAL,
+                   (GIOFunc)io_watch_callback, GUINT_TO_POINTER(i));
+    g_io_channel_unref(channel);
   }
 
   /* update the statusbar */
@@ -218,8 +209,7 @@ launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
 void
 kill_clients(void)
 {
-  guint8 i;
-  for (i = 0; i < NUM_CLIENTS; ++i) {
+  for (guint8 i = 0; i < NUM_CLIENTS; ++i) {
     if (clients[i].is_running) {
       kill(clients[i].pid, SIGTERM); /* POSIX extension */
     }

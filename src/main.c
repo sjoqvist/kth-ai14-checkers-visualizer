@@ -168,8 +168,7 @@ main(int argc, char **argv)
   options_success = parse_options(argc, argv, &display_help);
 
   if (display_help) {
-    guint8 i;
-    for (i = 0; obfuscated_email[i] != 0; ++i) {
+    for (guint8 i = 0; obfuscated_email[i] != 0; ++i) {
       obfuscated_email[i] ^= 42 + 3*i;
     }
     fprintf(stderr, usage,

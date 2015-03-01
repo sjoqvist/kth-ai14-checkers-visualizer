@@ -233,24 +233,21 @@ parse_client_stdout(gchar   *move_line,
     }
 
     /* read the integers from the array of squares */
-    {
-      guint i;
-      /* read backwards, since prepending the linked list is cheaper */
-      for (i = n_squares; i != 0; --i) {
-        const int sq = atoi(strv_moves[i]);
+    /* read backwards, since prepending the linked list is cheaper */
+    for (guint i = n_squares; i != 0; --i) {
+      const int sq = atoi(strv_moves[i]);
 
-        /* verify that the number is in range, otherwise quit */
-        if (sq < 1 || sq > NUM_DARK_SQ) {
-          /* illegal value, restore and abort */
-          g_slist_free(*moves);
-          *moves = NULL;
-          g_strfreev(strv_moves);
-          g_strfreev(split_line);
-          return FALSE;
-        }
-        assert(sq > 0);
-        *moves = g_slist_prepend(*moves, GUINT_TO_POINTER((guint)sq - 1));
+      /* verify that the number is in range, otherwise quit */
+      if (sq < 1 || sq > NUM_DARK_SQ) {
+        /* illegal value, restore and abort */
+        g_slist_free(*moves);
+        *moves = NULL;
+        g_strfreev(strv_moves);
+        g_strfreev(split_line);
+        return FALSE;
       }
+      assert(sq > 0);
+      *moves = g_slist_prepend(*moves, GUINT_TO_POINTER((guint)sq - 1));
     }
     g_strfreev(strv_moves);
   }
@@ -332,12 +329,11 @@ append_text(const gchar *text, gsize len, guint8 channel_id)
     /* new row: create new buffer textmarks and a new entry in the store */
     gchar *mark_name_begin;
     gchar *mark_name_end;
-    guint8 i;
 
     /* add buffer textmarks */
     mark_name_begin = get_mark_name_begin(nrows);
     mark_name_end = get_mark_name_end(nrows);
-    for (i = 0; i < NUM_CHANNELS; ++i) {
+    for (guint8 i = 0; i < NUM_CHANNELS; ++i) {
       GtkTextIter it;
       gtk_text_buffer_get_end_iter(buffers[i], &it);
       gtk_text_buffer_create_mark(buffers[i], mark_name_begin, &it, TRUE);
@@ -471,8 +467,7 @@ release_resources(void)
 static void
 wipe_buffers(void)
 {
-  guint8 i;
-  for (i = 0; i < NUM_CHANNELS; ++i) {
+  for (guint8 i = 0; i < NUM_CHANNELS; ++i) {
     buffers[i] = gtk_text_buffer_new(NULL);
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(textviews[i]), buffers[i]);
     gtk_text_buffer_create_tag(buffers[i], "emph",
@@ -515,8 +510,7 @@ update_status(const client_t clients[NUM_CLIENTS])
   is_running = FALSE;
   {
     gchar *descriptions[NUM_CLIENTS+1];
-    guint8 i;
-    for (i=0; i<NUM_CLIENTS; ++i) {
+    for (guint8 i=0; i<NUM_CLIENTS; ++i) {
       descriptions[i] = get_client_description(i, &clients[i]);
       is_running |= clients[i].is_running;
     }
@@ -525,7 +519,7 @@ update_status(const client_t clients[NUM_CLIENTS])
     assert(g_strv_length(descriptions) == NUM_CLIENTS);
 
     text = g_strjoinv(" ", descriptions);
-    for (i=0; i<NUM_CLIENTS; ++i) g_free(descriptions[i]);
+    for (guint8 i=0; i<NUM_CLIENTS; ++i) g_free(descriptions[i]);
   }
 
   gtk_statusbar_pop(GTK_STATUSBAR(statusbar), statusbar_context_id);
@@ -748,13 +742,12 @@ highlight_text(GtkTreePath *path)
   gint row;
   gchar *mark_name_begin;
   gchar *mark_name_end;
-  guint8 i;
 
   row = *gtk_tree_path_get_indices(path);
   mark_name_begin = get_mark_name_begin(row);
   mark_name_end = get_mark_name_end(row);
 
-  for (i = 0; i < NUM_CHANNELS; ++i) {
+  for (guint8 i = 0; i < NUM_CHANNELS; ++i) {
     GtkTextIter iter_begin;
     GtkTextIter iter_end;
     GtkTextMark *mark_begin;
@@ -1172,11 +1165,10 @@ create_window_with_widgets(void)
   /* build player output and command line section */
   {
     GtkWidget *paned_players;
-    guint8 i;
 
     paned_players = gtk_hpaned_new();
     gtk_paned_pack2(GTK_PANED(paned), paned_players, FALSE, TRUE);
-    for (i = 0; i < NUM_CLIENTS; ++i) {
+    for (guint8 i = 0; i < NUM_CLIENTS; ++i) {
       (i == 0 ? gtk_paned_pack1 : gtk_paned_pack2)
         (GTK_PANED(paned_players), create_player_panel(i), TRUE, TRUE);
     }
