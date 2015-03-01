@@ -16,19 +16,12 @@
 #include "clients.h"
 #include "gui.h"
 
-/* splitting the usage string to avoid a 509 byte limitation in C90 */
-/*! \brief Top level usage string */
+/*! \brief Usage message */
 static const gchar *usage =
   "Usage: %s [OPTION]...\n"
   "Visualizer for the Checkers homework assignment of the fall of 2014\n"
   "in DD2380 Artificial Intelligence (ai14) at KTH.\n"
   "\n"
-  "%s%s%s"
-  "Copyright (c) 2014 Anders Sj\xc3\xb6qvist <%s>\n"
-  "Published under the MIT License.\n";
-
-/*! \brief Execution control part of the usage information */
-static const gchar *usage_execution =
   "Execution control:\n"
   "  -1 CMD   use CMD as the command line for player 1 (default \"\")\n"
   "  -2 CMD   use CMD as the command line for player 2 (default \"\")\n"
@@ -37,23 +30,19 @@ static const gchar *usage_execution =
   "  -r       run the player commands automatically after start-up\n"
   "  -R       don't run the player commands automatically (default)\n"
   "  -t NUM   set the animation timer to NUM msec (default 1000)\n"
-  "\n";
-
-/*! \brief Window control part of the usage information */
-static const gchar *usage_window =
+  "\n"
   "Window control:\n"
   "  -f FONT  use FONT for the output buffers (default \"monospace 8\")\n"
   "  -m       ask the window manager to maximize the window\n"
   "  -q       quit once the animation has completed\n"
   "  -x NUM   set the window width to NUM px (default 600)\n"
   "  -y NUM   set the window height to NUM px (default 650)\n"
-  "\n";
-
-/*! \brief Miscellaneous part of the usage information */
-static const gchar *usage_misc =
+  "\n"
   "Miscellaneous:\n"
   "  -h       display this help text and exit\n"
-  "\n";
+  "\n"
+  "Copyright (c) 2014 Anders Sj\xc3\xb6qvist <%s>\n"
+  "Published under the MIT License.\n";
 
 /*! \brief Author's obfuscated e-mail address to fool harvesters */
 static gchar obfuscated_email[] = "KCTVDJ|L(*9='\x7f'#";
@@ -171,9 +160,7 @@ main(int argc, char **argv)
     for (guint8 i = 0; obfuscated_email[i] != 0; ++i) {
       obfuscated_email[i] ^= 42 + 3*i;
     }
-    fprintf(stderr, usage,
-            argv[0], usage_execution, usage_window, usage_misc,
-            obfuscated_email);
+    fprintf(stderr, usage, argv[0], obfuscated_email);
     exit(options_success ? EXIT_SUCCESS : EXIT_FAILURE);
   }
 
