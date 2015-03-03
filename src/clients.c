@@ -19,13 +19,10 @@
 #define BUFFER_SIZE (64<<10)
 
 /*! \brief Standard input channels for each of the clients */
-static GIOChannel *channel_stdin[NUM_CLIENTS] = { NULL, NULL };
+static GIOChannel *channel_stdin[NUM_CLIENTS];
 
 /*! \brief Information about the child processes */
-static client_t clients[NUM_CLIENTS] = {
-  { 0, FALSE, 0 },
-  { 0, FALSE, 0 }
-};
+static client_t clients[NUM_CLIENTS];
 
 /*!
  * \brief

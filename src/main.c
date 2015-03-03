@@ -48,7 +48,7 @@ static const gchar *usage =
 static gchar obfuscated_email[] = "KCTVDJ|L(*9='\x7f'#";
 
 /*! \brief Initial strings for the command lines */
-gchar   *option_cmds[NUM_CLIENTS] = { "", "" };
+gchar   *option_cmds[NUM_CLIENTS];
 /*! \brief Initial state of the Animate button */
 gboolean option_animate           = TRUE;
 /*!

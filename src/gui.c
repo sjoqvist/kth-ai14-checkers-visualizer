@@ -999,7 +999,8 @@ create_player_panel(guint8 id)
                   TRUE, TRUE);
   label_cmd = gtk_label_new("Command line:");
   entry_cmds[id] = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(entry_cmds[id]), option_cmds[id]);
+  gtk_entry_set_text(GTK_ENTRY(entry_cmds[id]),
+                     option_cmds[id] ? option_cmds[id] : "");
   box_inner = gtk_vbox_new(FALSE, 0);
   gtk_box_pack_start(GTK_BOX(box_inner), label_cmd, FALSE, FALSE, 0);
   gtk_misc_set_alignment(GTK_MISC(label_cmd), 0, 0);
