@@ -504,7 +504,7 @@ get_client_description(guint16 n, const client_t * const client)
 
 /* documented in gui.h */
 void
-update_status(const client_t clients[NUM_CLIENTS])
+update_status(const client_t clients[static NUM_CLIENTS])
 {
   gchar *text;
   is_running = FALSE;

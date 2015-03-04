@@ -129,7 +129,7 @@ child_exit_callback(GPid pid, gint status, gpointer user_data)
 
 /* documented in clients.h */
 void
-launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error)
+launch_clients(const gchar *cmds[static NUM_CLIENTS], GError **error)
 {
   gint fd_stdin[NUM_CLIENTS];
   gint fd_stdouterr[NUM_CHANNELS];

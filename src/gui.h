@@ -53,7 +53,7 @@ append_text(const gchar *text, gsize len, guint8 channel_id);
  * \param[in] clients  the array of structs from where to read the status
  */
 void
-update_status(const client_t clients[NUM_CLIENTS]);
+update_status(const client_t clients[static NUM_CLIENTS]);
 
 /*!
  * \brief

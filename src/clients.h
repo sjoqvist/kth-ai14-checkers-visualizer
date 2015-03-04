@@ -39,7 +39,7 @@ typedef struct {
  *                   afterwards if set)
  */
 void
-launch_clients(const gchar *cmds[NUM_CLIENTS], GError **error);
+launch_clients(const gchar *cmds[static NUM_CLIENTS], GError **error);
 
 /*!
  * \brief
