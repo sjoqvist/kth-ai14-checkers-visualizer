@@ -30,7 +30,7 @@ enum {
   DESC_COLUMN,       /*!< description of the move to display to the user */
   BOARD_COLUMN,      /*!< string representing the board setup */
   MOVES_COLUMN,      /*!< list of moves/jumps leading to the current setup */
-  IS_CLIENT0_COLUMN, /*!< \c TRUE if the client ID is 0, \c FALSE otherwise */
+  CLIENT_ID_COLUMN,  /*!< client ID of the source */
   STDOUT_COLUMN,     /*!< buffer to store stdout data for the current move */
   N_COLUMNS          /*!< number of columns (end of enum) */
 };
@@ -311,13 +311,13 @@ append_text(const gchar *text, gsize len, guint8 channel_id)
                                               NULL, nrows - 1))) {
   case TRUE: {
     /* at least one entry exists - check if this should be updated */
-    gboolean is_client0;
+    guint client_id;
     gtk_tree_model_get(GTK_TREE_MODEL(store), &iter,
-                       IS_CLIENT0_COLUMN, &is_client0,
+                       CLIENT_ID_COLUMN, &client_id,
                        STDOUT_COLUMN, &stdout_column,
                        -1);
     /* did we receive more data from the same client? */
-    if ((CLIENT_ID(channel_id) == 0) == is_client0) {
+    if (CLIENT_ID(channel_id) == client_id) {
       --nrows;
       break;
     }
@@ -398,7 +398,7 @@ append_text(const gchar *text, gsize len, guint8 channel_id)
                      DESC_COLUMN, desc_column,
                      BOARD_COLUMN, board_column,
                      MOVES_COLUMN, moves_column,
-                     IS_CLIENT0_COLUMN, CLIENT_ID(channel_id) == 0,
+                     CLIENT_ID_COLUMN, CLIENT_ID(channel_id),
                      STDOUT_COLUMN, stdout_column,
                      -1);
   g_free(player_column);
@@ -1057,7 +1057,7 @@ create_window_with_widgets(void)
                                G_TYPE_STRING,
                                G_TYPE_STRING,
                                G_TYPE_POINTER,
-                               G_TYPE_BOOLEAN,
+                               G_TYPE_UINT,
                                G_TYPE_STRING);
     gtk_tree_view_set_model(GTK_TREE_VIEW(list), GTK_TREE_MODEL(store));
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(list));
