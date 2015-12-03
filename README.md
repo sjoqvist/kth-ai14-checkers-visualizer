@@ -46,7 +46,7 @@ See also:
 * [Course information](http://www.kth.se/student/kurser/kurs/DD2380?l=en)
 * [Course web page](http://dd2380.csc.kth.se/)
 * [Checkers problem description on
-  Kattis](https://kth.kattis.scrool.se/problems/kth:ai:checkers)
+  Kattis](https://kth.kattis.com/problems/kth:ai:checkers)
 
 Building
 --------
