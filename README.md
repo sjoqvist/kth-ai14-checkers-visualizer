@@ -15,7 +15,7 @@ my personal testing ground for GTK+, Doxygen, Git, optimizations, coding
 styles and more.
 
 ![Screenshot of the Checkers Visualizer's main
-window](https://raw.github.com/aliquis/kth-ai14-checkers-visualizer/master/doc/screenshot.png)
+window](https://raw.github.com/sjoqvist/kth-ai14-checkers-visualizer/master/doc/screenshot.png)
 
 The code works on at least Windows, OS X and Linux. Below, you'll find
 [instructions on how to build the project](#building) on the different
